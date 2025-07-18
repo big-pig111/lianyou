@@ -48,6 +48,11 @@
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@solana/web3.js@1.88.2/lib/index.iife.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-functions-compat.js"></script>
 </head>
 <body class="bg-gradient-to-br from-dark to-slate-800 min-h-screen flex flex-col items-center justify-center p-4 font-sans text-light">
     <div class="max-w-3xl w-full bg-slate-900/80 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
@@ -120,6 +125,9 @@
                         <p class="text-lg font-game text-light mb-6">最高分: <span id="finalHighScore" class="text-accent">0</span></p>
                         <button id="playAgainBtn" class="game-button bg-accent text-white hover:bg-orange-600 focus:ring-accent/50">
                             <i class="fa fa-refresh mr-2"></i>再玩一次
+                        </button>
+                        <button id="claimTokenBtn" class="game-button bg-primary text-white mt-4">
+                            领取代币
                         </button>
                     </div>
                 </div>
@@ -199,6 +207,21 @@
 
         // 初始化高分显示
         highScoreElement.textContent = highScore;
+
+        // Firebase 初始化
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5Z5ieEbAcfQX0kxGSn9ldGXhzvAwx_8M",
+            authDomain: "chat-294cc.firebaseapp.com",
+            databaseURL: "https://chat-294cc-default-rtdb.firebaseio.com",
+            projectId: "chat-294cc",
+            storageBucket: "chat-294cc.appspot.com",
+            messagingSenderId: "913615304269",
+            appId: "1:913615304269:web:0274ffaccb8e6b678e4e04",
+            measurementId: "G-SJR9NDW86B"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
 
         // 设置画布尺寸
         function setupCanvas() {
@@ -597,6 +620,37 @@
         // 初始化
         setupEventListeners();
         setupCanvas();
+
+        // 领取代币按钮逻辑
+        const claimTokenBtn = document.getElementById('claimTokenBtn');
+        if (claimTokenBtn) {
+            claimTokenBtn.addEventListener('click', async () => {
+                if (!window.solana || !window.solana.isPhantom) {
+                    alert("请先安装 Phantom 钱包");
+                    return;
+                }
+                try {
+                    // 连接钱包
+                    const resp = await window.solana.connect();
+                    const wallet = resp.publicKey.toString();
+                    // 调用 Cloud Function
+                    const claimToken = firebase.functions().httpsCallable("claimToken");
+                    claimToken({ wallet })
+                        .then(res => {
+                            if (res.data.success) {
+                                alert("领取成功！交易哈希：" + res.data.tx);
+                            } else {
+                                alert("领取失败");
+                            }
+                        })
+                        .catch(err => {
+                            alert("领取失败: " + (err.message || err));
+                        });
+                } catch (e) {
+                    alert("钱包连接失败: " + (e.message || e));
+                }
+            });
+        }
     </script>
 </body>
 </html>    
