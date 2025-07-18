@@ -88,6 +88,10 @@
 
                 <!-- 游戏控制按钮 -->
                 <div class="flex flex-col gap-3 mt-auto">
+                    <button id="loginBtn" class="game-button bg-blue-500 text-white hover:bg-blue-700 focus:ring-blue-400/50 mb-2">
+                        <i class="fa fa-user mr-2"></i>登录
+                    </button>
+                    <p class="text-xs text-slate-400 mt-1">未登录时领取代币将自动匿名登录</p>
                     <button id="startBtn" class="game-button bg-primary text-white hover:bg-secondary focus:ring-primary/50">
                         <i class="fa fa-play mr-2"></i>开始游戏
                     </button>
@@ -663,6 +667,32 @@
                         });
                 } catch (e) {
                     alert("登录或钱包连接失败: " + (e.message || e));
+                }
+            });
+        }
+
+        // 手动登录按钮逻辑
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', async () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                try {
+                    await firebase.auth().signInWithPopup(provider);
+                    loginBtn.textContent = '已登录';
+                    loginBtn.disabled = true;
+                    loginBtn.classList.add('bg-green-500');
+                    loginBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700');
+                } catch (e) {
+                    alert('登录失败: ' + (e.message || e));
+                }
+            });
+            // 页面加载时检测是否已登录
+            firebase.auth().onAuthStateChanged(user => {
+                if (user && !user.isAnonymous) {
+                    loginBtn.textContent = '已登录';
+                    loginBtn.disabled = true;
+                    loginBtn.classList.add('bg-green-500');
+                    loginBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700');
                 }
             });
         }
