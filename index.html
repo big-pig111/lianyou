@@ -88,10 +88,15 @@
 
                 <!-- 游戏控制按钮 -->
                 <div class="flex flex-col gap-3 mt-auto">
-                    <button id="loginBtn" class="game-button bg-blue-500 text-white hover:bg-blue-700 focus:ring-blue-400/50 mb-2">
-                        <i class="fa fa-user mr-2"></i>登录
-                    </button>
-                    <p class="text-xs text-slate-400 mt-1">未登录时领取代币将自动匿名登录</p>
+                    <div class="flex gap-2 mb-2">
+                        <button id="loginGoogleBtn" class="game-button bg-blue-500 text-white hover:bg-blue-700 focus:ring-blue-400/50 flex-1">
+                            <i class="fa fa-user mr-2"></i>Google 登录
+                        </button>
+                        <button id="loginAnonBtn" class="game-button bg-gray-500 text-white hover:bg-gray-700 focus:ring-gray-400/50 flex-1">
+                            <i class="fa fa-user-secret mr-2"></i>匿名登录
+                        </button>
+                    </div>
+                    <p id="loginStatus" class="text-xs text-slate-400 mb-2">请选择登录方式</p>
                     <button id="startBtn" class="game-button bg-primary text-white hover:bg-secondary focus:ring-primary/50">
                         <i class="fa fa-play mr-2"></i>开始游戏
                     </button>
@@ -671,28 +676,47 @@
             });
         }
 
-        // 手动登录按钮逻辑
-        const loginBtn = document.getElementById('loginBtn');
-        if (loginBtn) {
-            loginBtn.addEventListener('click', async () => {
+        // 主动选择登录逻辑
+        const loginGoogleBtn = document.getElementById('loginGoogleBtn');
+        const loginAnonBtn = document.getElementById('loginAnonBtn');
+        const loginStatus = document.getElementById('loginStatus');
+        if (loginGoogleBtn && loginAnonBtn && loginStatus) {
+            loginGoogleBtn.addEventListener('click', async () => {
                 const provider = new firebase.auth.GoogleAuthProvider();
                 try {
                     await firebase.auth().signInWithPopup(provider);
-                    loginBtn.textContent = '已登录';
-                    loginBtn.disabled = true;
-                    loginBtn.classList.add('bg-green-500');
-                    loginBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700');
                 } catch (e) {
-                    alert('登录失败: ' + (e.message || e));
+                    alert('Google 登录失败: ' + (e.message || e));
                 }
             });
-            // 页面加载时检测是否已登录
+            loginAnonBtn.addEventListener('click', async () => {
+                try {
+                    await firebase.auth().signInAnonymously();
+                } catch (e) {
+                    alert('匿名登录失败: ' + (e.message || e));
+                }
+            });
             firebase.auth().onAuthStateChanged(user => {
-                if (user && !user.isAnonymous) {
-                    loginBtn.textContent = '已登录';
-                    loginBtn.disabled = true;
-                    loginBtn.classList.add('bg-green-500');
-                    loginBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700');
+                if (user) {
+                    if (user.isAnonymous) {
+                        loginStatus.textContent = '已匿名登录';
+                    } else {
+                        loginStatus.textContent = '已使用 Google 登录';
+                    }
+                    loginGoogleBtn.disabled = true;
+                    loginAnonBtn.disabled = true;
+                    loginGoogleBtn.classList.add('bg-green-500');
+                    loginAnonBtn.classList.add('bg-green-500');
+                    loginGoogleBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700');
+                    loginAnonBtn.classList.remove('bg-gray-500', 'hover:bg-gray-700');
+                } else {
+                    loginStatus.textContent = '请选择登录方式';
+                    loginGoogleBtn.disabled = false;
+                    loginAnonBtn.disabled = false;
+                    loginGoogleBtn.classList.remove('bg-green-500');
+                    loginAnonBtn.classList.remove('bg-green-500');
+                    loginGoogleBtn.classList.add('bg-blue-500');
+                    loginAnonBtn.classList.add('bg-gray-500');
                 }
             });
         }
