@@ -53,6 +53,31 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-functions-compat.js"></script>
+    
+    <!-- Firebase 初始化脚本 -->
+    <script>
+        // Firebase 初始化
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5Z5ieEbAcfQX0kxGSn9ldGXhzvAwx_8M",
+            authDomain: "chat-294cc.firebaseapp.com",
+            databaseURL: "https://chat-294cc-default-rtdb.firebaseio.com",
+            projectId: "chat-294cc",
+            storageBucket: "chat-294cc.appspot.com",
+            messagingSenderId: "913615304269",
+            appId: "1:913615304269:web:0274ffaccb8e6b678e4e04",
+            measurementId: "G-SJR9NDW86B"
+        };
+        
+        // 确保 Firebase 已加载后再初始化
+        if (typeof firebase !== 'undefined') {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            console.log('Firebase 初始化成功，项目ID:', firebase.app().options.projectId);
+        } else {
+            console.error('Firebase 未加载');
+        }
+    </script>
 </head>
 <body class="bg-gradient-to-br from-dark to-slate-800 min-h-screen flex flex-col items-center justify-center p-4 font-sans text-light">
     <div class="max-w-3xl w-full bg-slate-900/80 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
@@ -176,21 +201,6 @@
     </div>
 
     <script>
-        // Firebase 初始化（移到最前面）
-        const firebaseConfig = {
-            apiKey: "AIzaSyA5Z5ieEbAcfQX0kxGSn9ldGXhzvAwx_8M",
-            authDomain: "chat-294cc.firebaseapp.com",
-            databaseURL: "https://chat-294cc-default-rtdb.firebaseio.com",
-            projectId: "chat-294cc",
-            storageBucket: "chat-294cc.appspot.com",
-            messagingSenderId: "913615304269",
-            appId: "1:913615304269:web:0274ffaccb8e6b678e4e04",
-            measurementId: "G-SJR9NDW86B"
-        };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-
         // 游戏常量
         const GRID_SIZE = 20;
         const INITIAL_SPEED = 150;
