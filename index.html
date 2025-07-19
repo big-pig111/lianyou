@@ -175,538 +175,7 @@
         </footer>
     </div>
 
-    <script>
-        // 游戏常量
-        const GRID_SIZE = 20;
-        const INITIAL_SPEED = 150;
-        const MIN_SPEED = 60;
-        const SPEED_INCREMENT = 5;
-        const POINTS_PER_FOOD = 10;
-
-        // 获取DOM元素
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreElement = document.getElementById('score');
-        const highScoreElement = document.getElementById('highScore');
-        const gameStatusElement = document.getElementById('gameStatus');
-        const startBtn = document.getElementById('startBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const closeBtn = document.getElementById('closeBtn');
-        const playAgainBtn = document.getElementById('playAgainBtn');
-        const gameOverElement = document.getElementById('gameOver');
-        const finalScoreElement = document.getElementById('finalScore');
-        const finalHighScoreElement = document.getElementById('finalHighScore');
-        const upBtn = document.getElementById('upBtn');
-        const downBtn = document.getElementById('downBtn');
-        const leftBtn = document.getElementById('leftBtn');
-        const rightBtn = document.getElementById('rightBtn');
-
-        // 游戏变量
-        let snake = [];
-        let food = {};
-        let direction = '';
-        let nextDirection = '';
-        let gameSpeed = INITIAL_SPEED;
-        let score = 0;
-        let highScore = localStorage.getItem('snakeHighScore') || 0;
-        let gameInterval;
-        let isGameRunning = false;
-        let canvasSize = 0;
-        let cellSize = 0;
-
-        // 初始化高分显示
-        highScoreElement.textContent = highScore;
-
-        // 设置画布尺寸
-        function setupCanvas() {
-            // 响应式画布尺寸
-            const containerWidth = canvas.parentElement.clientWidth;
-            canvasSize = Math.min(containerWidth, 600);
-            canvasSize = Math.floor(canvasSize / GRID_SIZE) * GRID_SIZE; // 确保网格对齐
-            
-            canvas.width = canvasSize;
-            canvas.height = canvasSize;
-            
-            cellSize = canvasSize / GRID_SIZE;
-        }
-
-        // 初始化游戏
-        function initGame() {
-            setupCanvas();
-            
-            // 初始化蛇 - 从中间开始
-            const centerPos = Math.floor(GRID_SIZE / 2);
-            snake = [
-                {x: centerPos, y: centerPos},
-                {x: centerPos - 1, y: centerPos},
-                {x: centerPos - 2, y: centerPos}
-            ];
-            
-            // 初始化方向
-            direction = 'right';
-            nextDirection = 'right';
-            
-            // 生成食物
-            generateFood();
-            
-            // 重置分数和速度
-            score = 0;
-            gameSpeed = INITIAL_SPEED;
-            
-            // 更新UI
-            updateScore();
-            gameStatusElement.textContent = '游戏进行中';
-            
-            // 隐藏游戏结束画面
-            gameOverElement.classList.add('hidden');
-            
-            // 启用/禁用按钮
-            startBtn.disabled = true;
-            restartBtn.disabled = false;
-            closeBtn.disabled = false;
-            
-            // 开始游戏循环
-            if (gameInterval) clearInterval(gameInterval);
-            gameInterval = setInterval(gameLoop, gameSpeed);
-            isGameRunning = true;
-        }
-
-        // 生成食物
-        function generateFood() {
-            // 确保食物不会出现在蛇身上
-            let overlapping;
-            do {
-                overlapping = false;
-                food = {
-                    x: Math.floor(Math.random() * GRID_SIZE),
-                    y: Math.floor(Math.random() * GRID_SIZE)
-                };
-                
-                // 检查是否与蛇重叠
-                for (let segment of snake) {
-                    if (segment.x === food.x && segment.y === food.y) {
-                        overlapping = true;
-                        break;
-                    }
-                }
-            } while (overlapping);
-        }
-
-        // 游戏主循环
-        function gameLoop() {
-            // 更新方向
-            direction = nextDirection;
-            
-            // 检查是否撞到墙壁
-            const head = {x: snake[0].x, y: snake[0].y};
-            switch (direction) {
-                case 'up':
-                    head.y--;
-                    break;
-                case 'down':
-                    head.y++;
-                    break;
-                case 'left':
-                    head.x--;
-                    break;
-                case 'right':
-                    head.x++;
-                    break;
-            }
-            
-            // 检查碰撞
-            if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
-                gameOver();
-                return;
-            }
-            
-            // 检查是否撞到自己
-            for (let i = 0; i < snake.length; i++) {
-                if (snake[i].x === head.x && snake[i].y === head.y) {
-                    gameOver();
-                    return;
-                }
-            }
-            
-            // 将新头部添加到蛇
-            snake.unshift(head);
-            
-            // 检查是否吃到食物
-            if (head.x === food.x && head.y === food.y) {
-                // 增加分数
-                score += POINTS_PER_FOOD;
-                updateScore();
-                
-                // 生成新食物
-                generateFood();
-                
-                // 提高游戏速度（有上限）
-                if (gameSpeed > MIN_SPEED) {
-                    gameSpeed -= SPEED_INCREMENT;
-                    clearInterval(gameInterval);
-                    gameInterval = setInterval(gameLoop, gameSpeed);
-                }
-            } else {
-                // 如果没吃到食物，移除尾部
-                snake.pop();
-            }
-            
-            // 绘制游戏
-            drawGame();
-        }
-
-        // 绘制游戏
-        function drawGame() {
-            // 清空画布
-            ctx.fillStyle = '#1E293B';
-            ctx.fillRect(0, 0, canvasSize, canvasSize);
-            
-            // 绘制网格（可选）
-            ctx.strokeStyle = '#2D3748';
-            ctx.lineWidth = 0.5;
-            for (let i = 0; i < GRID_SIZE; i++) {
-                const pos = i * cellSize;
-                ctx.beginPath();
-                ctx.moveTo(pos, 0);
-                ctx.lineTo(pos, canvasSize);
-                ctx.stroke();
-                
-                ctx.beginPath();
-                ctx.moveTo(0, pos);
-                ctx.lineTo(canvasSize, pos);
-                ctx.stroke();
-            }
-            
-            // 绘制蛇
-            snake.forEach((segment, index) => {
-                if (index === 0) {
-                    // 蛇头
-                    ctx.fillStyle = '#2E7D32';
-                    ctx.shadowColor = '#4CAF50';
-                    ctx.shadowBlur = 10;
-                } else {
-                    // 蛇身
-                    ctx.fillStyle = '#4CAF50';
-                    ctx.shadowBlur = 0;
-                }
-                
-                ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
-                
-                // 蛇头的眼睛
-                if (index === 0) {
-                    ctx.fillStyle = '#FFFFFF';
-                    const eyeSize = cellSize / 5;
-                    const eyeOffset = cellSize / 3;
-                    
-                    // 根据方向设置眼睛位置
-                    switch (direction) {
-                        case 'up':
-                            ctx.fillRect(segment.x * cellSize + cellSize / 4 - eyeSize / 2, segment.y * cellSize + eyeOffset, eyeSize, eyeSize);
-                            ctx.fillRect(segment.x * cellSize + cellSize * 3/4 - eyeSize / 2, segment.y * cellSize + eyeOffset, eyeSize, eyeSize);
-                            break;
-                        case 'down':
-                            ctx.fillRect(segment.x * cellSize + cellSize / 4 - eyeSize / 2, segment.y * cellSize + cellSize - eyeOffset - eyeSize, eyeSize, eyeSize);
-                            ctx.fillRect(segment.x * cellSize + cellSize * 3/4 - eyeSize / 2, segment.y * cellSize + cellSize - eyeOffset - eyeSize, eyeSize, eyeSize);
-                            break;
-                        case 'left':
-                            ctx.fillRect(segment.x * cellSize + eyeOffset, segment.y * cellSize + cellSize / 4 - eyeSize / 2, eyeSize, eyeSize);
-                            ctx.fillRect(segment.x * cellSize + eyeOffset, segment.y * cellSize + cellSize * 3/4 - eyeSize / 2, eyeSize, eyeSize);
-                            break;
-                        case 'right':
-                            ctx.fillRect(segment.x * cellSize + cellSize - eyeOffset - eyeSize, segment.y * cellSize + cellSize / 4 - eyeSize / 2, eyeSize, eyeSize);
-                            ctx.fillRect(segment.x * cellSize + cellSize - eyeOffset - eyeSize, segment.y * cellSize + cellSize * 3/4 - eyeSize / 2, eyeSize, eyeSize);
-                            break;
-                    }
-                }
-            });
-            
-            // 绘制食物
-            ctx.fillStyle = '#FF9800';
-            ctx.shadowColor = '#FF9800';
-            ctx.shadowBlur = 15;
-            ctx.beginPath();
-            ctx.arc(
-                food.x * cellSize + cellSize / 2,
-                food.y * cellSize + cellSize / 2,
-                cellSize / 2,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        }
-
-        // 更新分数
-        function updateScore() {
-            scoreElement.textContent = score;
-            
-            // 更新最高分
-            if (score > highScore) {
-                highScore = score;
-                highScoreElement.textContent = highScore;
-                localStorage.setItem('snakeHighScore', highScore);
-            }
-        }
-
-        // 游戏结束
-        function gameOver() {
-            clearInterval(gameInterval);
-            isGameRunning = false;
-            
-            // 更新游戏状态
-            gameStatusElement.textContent = '游戏结束';
-            
-            // 更新游戏结束画面
-            finalScoreElement.textContent = score;
-            finalHighScoreElement.textContent = highScore;
-            gameOverElement.classList.remove('hidden');
-            
-            // 启用/禁用按钮
-            startBtn.disabled = false;
-            restartBtn.disabled = true;
-        }
-
-        // 关闭游戏
-        function closeGame() {
-            clearInterval(gameInterval);
-            isGameRunning = false;
-            
-            // 重置游戏状态
-            snake = [];
-            direction = '';
-            nextDirection = '';
-            
-            // 更新UI
-            gameStatusElement.textContent = '游戏已关闭';
-            scoreElement.textContent = '0';
-            
-            // 清空画布
-            ctx.fillStyle = '#1E293B';
-            ctx.fillRect(0, 0, canvasSize, canvasSize);
-            
-            // 隐藏游戏结束画面
-            gameOverElement.classList.add('hidden');
-            
-            // 启用/禁用按钮
-            startBtn.disabled = false;
-            restartBtn.disabled = true;
-            closeBtn.disabled = true;
-        }
-
-        // 键盘控制
-        function handleKeyDown(e) {
-            if (!isGameRunning) return;
-            
-            const key = e.key;
-            
-            // 防止180度转向（不能直接往相反方向走）
-            switch (key) {
-                case 'ArrowUp':
-                case 'w':
-                case 'W':
-                    if (direction !== 'down') {
-                        nextDirection = 'up';
-                    }
-                    break;
-                case 'ArrowDown':
-                case 's':
-                case 'S':
-                    if (direction !== 'up') {
-                        nextDirection = 'down';
-                    }
-                    break;
-                case 'ArrowLeft':
-                case 'a':
-                case 'A':
-                    if (direction !== 'right') {
-                        nextDirection = 'left';
-                    }
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                case 'D':
-                    if (direction !== 'left') {
-                        nextDirection = 'right';
-                    }
-                    break;
-                case ' ': // 空格键暂停/继续
-                    togglePause();
-                    break;
-            }
-        }
-
-        // 移动端控制
-        function setupMobileControls() {
-            upBtn.addEventListener('click', () => {
-                if (direction !== 'down' && isGameRunning) {
-                    nextDirection = 'up';
-                }
-            });
-            
-            downBtn.addEventListener('click', () => {
-                if (direction !== 'up' && isGameRunning) {
-                    nextDirection = 'down';
-                }
-            });
-            
-            leftBtn.addEventListener('click', () => {
-                if (direction !== 'right' && isGameRunning) {
-                    nextDirection = 'left';
-                }
-            });
-            
-            rightBtn.addEventListener('click', () => {
-                if (direction !== 'left' && isGameRunning) {
-                    nextDirection = 'right';
-                }
-            });
-        }
-
-        // 暂停/继续游戏
-        function togglePause() {
-            if (!isGameRunning) return;
-            
-            if (gameInterval) {
-                clearInterval(gameInterval);
-                gameInterval = null;
-                gameStatusElement.textContent = '游戏暂停';
-            } else {
-                gameInterval = setInterval(gameLoop, gameSpeed);
-                gameStatusElement.textContent = '游戏进行中';
-            }
-        }
-
-        // 响应式处理
-        function handleResize() {
-            const wasRunning = isGameRunning;
-            if (wasRunning) {
-                clearInterval(gameInterval);
-            }
-            
-            setupCanvas();
-            if (snake.length > 0) {
-                drawGame();
-            }
-            
-            if (wasRunning) {
-                gameInterval = setInterval(gameLoop, gameSpeed);
-            }
-        }
-
-        // 事件监听
-        function setupEventListeners() {
-            // 按钮事件
-            startBtn.addEventListener('click', initGame);
-            restartBtn.addEventListener('click', initGame);
-            closeBtn.addEventListener('click', closeGame);
-            playAgainBtn.addEventListener('click', initGame);
-            
-            // 键盘控制
-            document.addEventListener('keydown', handleKeyDown);
-            
-            // 移动端控制
-            setupMobileControls();
-            
-            // 窗口大小变化
-            window.addEventListener('resize', handleResize);
-        }
-
-        // 初始化
-        setupEventListeners();
-        setupCanvas();
-
-        // 领取代币按钮逻辑（集成匿名登录）
-        async function ensureAnonymousLogin() {
-            return new Promise((resolve, reject) => {
-                const user = firebase.auth().currentUser;
-                if (user) {
-                    resolve(user);
-                } else {
-                    firebase.auth().signInAnonymously()
-                        .then(result => resolve(result.user))
-                        .catch(reject);
-                }
-            });
-        }
-        const claimTokenBtn = document.getElementById('claimTokenBtn');
-        if (claimTokenBtn) {
-            claimTokenBtn.addEventListener('click', async () => {
-                if (!window.solana || !window.solana.isPhantom) {
-                    alert("请先安装 Phantom 钱包");
-                    return;
-                }
-                try {
-                    // 先匿名登录
-                    await ensureAnonymousLogin();
-
-                    // 连接钱包
-                    const resp = await window.solana.connect();
-                    const wallet = resp.publicKey.toString();
-                    // 调用 Cloud Function
-                    const claimToken = firebase.functions().httpsCallable("claimToken");
-                    claimToken({ wallet })
-                        .then(res => {
-                            if (res.data.success) {
-                                alert("领取成功！交易哈希：" + res.data.tx);
-                            } else {
-                                alert("领取失败");
-                            }
-                        })
-                        .catch(err => {
-                            alert("领取失败: " + (err.message || err));
-                        });
-                } catch (e) {
-                    alert("登录或钱包连接失败: " + (e.message || e));
-                }
-            });
-        }
-
-        // 主动选择登录逻辑
-        const loginGoogleBtn = document.getElementById('loginGoogleBtn');
-        const loginAnonBtn = document.getElementById('loginAnonBtn');
-        const loginStatus = document.getElementById('loginStatus');
-        if (loginGoogleBtn && loginAnonBtn && loginStatus) {
-            loginGoogleBtn.addEventListener('click', async () => {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                try {
-                    await firebase.auth().signInWithPopup(provider);
-                } catch (e) {
-                    alert('Google 登录失败: ' + (e.message || e));
-                }
-            });
-            loginAnonBtn.addEventListener('click', async () => {
-                try {
-                    await firebase.auth().signInAnonymously();
-                } catch (e) {
-                    alert('匿名登录失败: ' + (e.message || e));
-                }
-            });
-            firebase.auth().onAuthStateChanged(user => {
-                if (user) {
-                    if (user.isAnonymous) {
-                        loginStatus.textContent = '已匿名登录';
-                    } else {
-                        loginStatus.textContent = '已使用 Google 登录';
-                    }
-                    loginGoogleBtn.disabled = true;
-                    loginAnonBtn.disabled = true;
-                    loginGoogleBtn.classList.add('bg-green-500');
-                    loginAnonBtn.classList.add('bg-green-500');
-                    loginGoogleBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700');
-                    loginAnonBtn.classList.remove('bg-gray-500', 'hover:bg-gray-700');
-                } else {
-                    loginStatus.textContent = '请选择登录方式';
-                    loginGoogleBtn.disabled = false;
-                    loginAnonBtn.disabled = false;
-                    loginGoogleBtn.classList.remove('bg-green-500');
-                    loginAnonBtn.classList.remove('bg-green-500');
-                    loginGoogleBtn.classList.add('bg-blue-500');
-                    loginAnonBtn.classList.add('bg-gray-500');
-                }
-            });
-        }
-    </script>
-    <!-- 在所有脚本后初始化 Firebase -->
+    <!-- Firebase 初始化和主逻辑合并 -->
     <script>
         // Firebase 初始化
         const firebaseConfig = {
@@ -723,6 +192,537 @@
             firebase.initializeApp(firebaseConfig);
         }
         console.log('Firebase 初始化成功，项目ID:', firebase.app().options.projectId);
+
+        // 主逻辑，等 DOM 和 firebase 都准备好再执行
+        window.addEventListener('DOMContentLoaded', function() {
+            // 游戏常量
+            const GRID_SIZE = 20;
+            const INITIAL_SPEED = 150;
+            const MIN_SPEED = 60;
+            const SPEED_INCREMENT = 5;
+            const POINTS_PER_FOOD = 10;
+
+            // 获取DOM元素
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreElement = document.getElementById('score');
+            const highScoreElement = document.getElementById('highScore');
+            const gameStatusElement = document.getElementById('gameStatus');
+            const startBtn = document.getElementById('startBtn');
+            const restartBtn = document.getElementById('restartBtn');
+            const closeBtn = document.getElementById('closeBtn');
+            const playAgainBtn = document.getElementById('playAgainBtn');
+            const gameOverElement = document.getElementById('gameOver');
+            const finalScoreElement = document.getElementById('finalScore');
+            const finalHighScoreElement = document.getElementById('finalHighScore');
+            const upBtn = document.getElementById('upBtn');
+            const downBtn = document.getElementById('downBtn');
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+
+            // 游戏变量
+            let snake = [];
+            let food = {};
+            let direction = '';
+            let nextDirection = '';
+            let gameSpeed = INITIAL_SPEED;
+            let score = 0;
+            let highScore = localStorage.getItem('snakeHighScore') || 0;
+            let gameInterval;
+            let isGameRunning = false;
+            let canvasSize = 0;
+            let cellSize = 0;
+
+            // 初始化高分显示
+            highScoreElement.textContent = highScore;
+
+            // 设置画布尺寸
+            function setupCanvas() {
+                // 响应式画布尺寸
+                const containerWidth = canvas.parentElement.clientWidth;
+                canvasSize = Math.min(containerWidth, 600);
+                canvasSize = Math.floor(canvasSize / GRID_SIZE) * GRID_SIZE; // 确保网格对齐
+                
+                canvas.width = canvasSize;
+                canvas.height = canvasSize;
+                
+                cellSize = canvasSize / GRID_SIZE;
+            }
+
+            // 初始化游戏
+            function initGame() {
+                setupCanvas();
+                
+                // 初始化蛇 - 从中间开始
+                const centerPos = Math.floor(GRID_SIZE / 2);
+                snake = [
+                    {x: centerPos, y: centerPos},
+                    {x: centerPos - 1, y: centerPos},
+                    {x: centerPos - 2, y: centerPos}
+                ];
+                
+                // 初始化方向
+                direction = 'right';
+                nextDirection = 'right';
+                
+                // 生成食物
+                generateFood();
+                
+                // 重置分数和速度
+                score = 0;
+                gameSpeed = INITIAL_SPEED;
+                
+                // 更新UI
+                updateScore();
+                gameStatusElement.textContent = '游戏进行中';
+                
+                // 隐藏游戏结束画面
+                gameOverElement.classList.add('hidden');
+                
+                // 启用/禁用按钮
+                startBtn.disabled = true;
+                restartBtn.disabled = false;
+                closeBtn.disabled = false;
+                
+                // 开始游戏循环
+                if (gameInterval) clearInterval(gameInterval);
+                gameInterval = setInterval(gameLoop, gameSpeed);
+                isGameRunning = true;
+            }
+
+            // 生成食物
+            function generateFood() {
+                // 确保食物不会出现在蛇身上
+                let overlapping;
+                do {
+                    overlapping = false;
+                    food = {
+                        x: Math.floor(Math.random() * GRID_SIZE),
+                        y: Math.floor(Math.random() * GRID_SIZE)
+                    };
+                    
+                    // 检查是否与蛇重叠
+                    for (let segment of snake) {
+                        if (segment.x === food.x && segment.y === food.y) {
+                            overlapping = true;
+                            break;
+                        }
+                    }
+                } while (overlapping);
+            }
+
+            // 游戏主循环
+            function gameLoop() {
+                // 更新方向
+                direction = nextDirection;
+                
+                // 检查是否撞到墙壁
+                const head = {x: snake[0].x, y: snake[0].y};
+                switch (direction) {
+                    case 'up':
+                        head.y--;
+                        break;
+                    case 'down':
+                        head.y++;
+                        break;
+                    case 'left':
+                        head.x--;
+                        break;
+                    case 'right':
+                        head.x++;
+                        break;
+                }
+                
+                // 检查碰撞
+                if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+                    gameOver();
+                    return;
+                }
+                
+                // 检查是否撞到自己
+                for (let i = 0; i < snake.length; i++) {
+                    if (snake[i].x === head.x && snake[i].y === head.y) {
+                        gameOver();
+                        return;
+                    }
+                }
+                
+                // 将新头部添加到蛇
+                snake.unshift(head);
+                
+                // 检查是否吃到食物
+                if (head.x === food.x && head.y === food.y) {
+                    // 增加分数
+                    score += POINTS_PER_FOOD;
+                    updateScore();
+                    
+                    // 生成新食物
+                    generateFood();
+                    
+                    // 提高游戏速度（有上限）
+                    if (gameSpeed > MIN_SPEED) {
+                        gameSpeed -= SPEED_INCREMENT;
+                        clearInterval(gameInterval);
+                        gameInterval = setInterval(gameLoop, gameSpeed);
+                    }
+                } else {
+                    // 如果没吃到食物，移除尾部
+                    snake.pop();
+                }
+                
+                // 绘制游戏
+                drawGame();
+            }
+
+            // 绘制游戏
+            function drawGame() {
+                // 清空画布
+                ctx.fillStyle = '#1E293B';
+                ctx.fillRect(0, 0, canvasSize, canvasSize);
+                
+                // 绘制网格（可选）
+                ctx.strokeStyle = '#2D3748';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < GRID_SIZE; i++) {
+                    const pos = i * cellSize;
+                    ctx.beginPath();
+                    ctx.moveTo(pos, 0);
+                    ctx.lineTo(pos, canvasSize);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0, pos);
+                    ctx.lineTo(canvasSize, pos);
+                    ctx.stroke();
+                }
+                
+                // 绘制蛇
+                snake.forEach((segment, index) => {
+                    if (index === 0) {
+                        // 蛇头
+                        ctx.fillStyle = '#2E7D32';
+                        ctx.shadowColor = '#4CAF50';
+                        ctx.shadowBlur = 10;
+                    } else {
+                        // 蛇身
+                        ctx.fillStyle = '#4CAF50';
+                        ctx.shadowBlur = 0;
+                    }
+                    
+                    ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
+                    
+                    // 蛇头的眼睛
+                    if (index === 0) {
+                        ctx.fillStyle = '#FFFFFF';
+                        const eyeSize = cellSize / 5;
+                        const eyeOffset = cellSize / 3;
+                        
+                        // 根据方向设置眼睛位置
+                        switch (direction) {
+                            case 'up':
+                                ctx.fillRect(segment.x * cellSize + cellSize / 4 - eyeSize / 2, segment.y * cellSize + eyeOffset, eyeSize, eyeSize);
+                                ctx.fillRect(segment.x * cellSize + cellSize * 3/4 - eyeSize / 2, segment.y * cellSize + eyeOffset, eyeSize, eyeSize);
+                                break;
+                            case 'down':
+                                ctx.fillRect(segment.x * cellSize + cellSize / 4 - eyeSize / 2, segment.y * cellSize + cellSize - eyeOffset - eyeSize, eyeSize, eyeSize);
+                                ctx.fillRect(segment.x * cellSize + cellSize * 3/4 - eyeSize / 2, segment.y * cellSize + cellSize - eyeOffset - eyeSize, eyeSize, eyeSize);
+                                break;
+                            case 'left':
+                                ctx.fillRect(segment.x * cellSize + eyeOffset, segment.y * cellSize + cellSize / 4 - eyeSize / 2, eyeSize, eyeSize);
+                                ctx.fillRect(segment.x * cellSize + eyeOffset, segment.y * cellSize + cellSize * 3/4 - eyeSize / 2, eyeSize, eyeSize);
+                                break;
+                            case 'right':
+                                ctx.fillRect(segment.x * cellSize + cellSize - eyeOffset - eyeSize, segment.y * cellSize + cellSize / 4 - eyeSize / 2, eyeSize, eyeSize);
+                                ctx.fillRect(segment.x * cellSize + cellSize - eyeOffset - eyeSize, segment.y * cellSize + cellSize * 3/4 - eyeSize / 2, eyeSize, eyeSize);
+                                break;
+                        }
+                    }
+                });
+                
+                // 绘制食物
+                ctx.fillStyle = '#FF9800';
+                ctx.shadowColor = '#FF9800';
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(
+                    food.x * cellSize + cellSize / 2,
+                    food.y * cellSize + cellSize / 2,
+                    cellSize / 2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            // 更新分数
+            function updateScore() {
+                scoreElement.textContent = score;
+                
+                // 更新最高分
+                if (score > highScore) {
+                    highScore = score;
+                    highScoreElement.textContent = highScore;
+                    localStorage.setItem('snakeHighScore', highScore);
+                }
+            }
+
+            // 游戏结束
+            function gameOver() {
+                clearInterval(gameInterval);
+                isGameRunning = false;
+                
+                // 更新游戏状态
+                gameStatusElement.textContent = '游戏结束';
+                
+                // 更新游戏结束画面
+                finalScoreElement.textContent = score;
+                finalHighScoreElement.textContent = highScore;
+                gameOverElement.classList.remove('hidden');
+                
+                // 启用/禁用按钮
+                startBtn.disabled = false;
+                restartBtn.disabled = true;
+            }
+
+            // 关闭游戏
+            function closeGame() {
+                clearInterval(gameInterval);
+                isGameRunning = false;
+                
+                // 重置游戏状态
+                snake = [];
+                direction = '';
+                nextDirection = '';
+                
+                // 更新UI
+                gameStatusElement.textContent = '游戏已关闭';
+                scoreElement.textContent = '0';
+                
+                // 清空画布
+                ctx.fillStyle = '#1E293B';
+                ctx.fillRect(0, 0, canvasSize, canvasSize);
+                
+                // 隐藏游戏结束画面
+                gameOverElement.classList.add('hidden');
+                
+                // 启用/禁用按钮
+                startBtn.disabled = false;
+                restartBtn.disabled = true;
+                closeBtn.disabled = true;
+            }
+
+            // 键盘控制
+            function handleKeyDown(e) {
+                if (!isGameRunning) return;
+                
+                const key = e.key;
+                
+                // 防止180度转向（不能直接往相反方向走）
+                switch (key) {
+                    case 'ArrowUp':
+                    case 'w':
+                    case 'W':
+                        if (direction !== 'down') {
+                            nextDirection = 'up';
+                        }
+                        break;
+                    case 'ArrowDown':
+                    case 's':
+                    case 'S':
+                        if (direction !== 'up') {
+                            nextDirection = 'down';
+                        }
+                        break;
+                    case 'ArrowLeft':
+                    case 'a':
+                    case 'A':
+                        if (direction !== 'right') {
+                            nextDirection = 'left';
+                        }
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                    case 'D':
+                        if (direction !== 'left') {
+                            nextDirection = 'right';
+                        }
+                        break;
+                    case ' ': // 空格键暂停/继续
+                        togglePause();
+                        break;
+                }
+            }
+
+            // 移动端控制
+            function setupMobileControls() {
+                upBtn.addEventListener('click', () => {
+                    if (direction !== 'down' && isGameRunning) {
+                        nextDirection = 'up';
+                    }
+                });
+                
+                downBtn.addEventListener('click', () => {
+                    if (direction !== 'up' && isGameRunning) {
+                        nextDirection = 'down';
+                    }
+                });
+                
+                leftBtn.addEventListener('click', () => {
+                    if (direction !== 'right' && isGameRunning) {
+                        nextDirection = 'left';
+                    }
+                });
+                
+                rightBtn.addEventListener('click', () => {
+                    if (direction !== 'left' && isGameRunning) {
+                        nextDirection = 'right';
+                    }
+                });
+            }
+
+            // 暂停/继续游戏
+            function togglePause() {
+                if (!isGameRunning) return;
+                
+                if (gameInterval) {
+                    clearInterval(gameInterval);
+                    gameInterval = null;
+                    gameStatusElement.textContent = '游戏暂停';
+                } else {
+                    gameInterval = setInterval(gameLoop, gameSpeed);
+                    gameStatusElement.textContent = '游戏进行中';
+                }
+            }
+
+            // 响应式处理
+            function handleResize() {
+                const wasRunning = isGameRunning;
+                if (wasRunning) {
+                    clearInterval(gameInterval);
+                }
+                
+                setupCanvas();
+                if (snake.length > 0) {
+                    drawGame();
+                }
+                
+                if (wasRunning) {
+                    gameInterval = setInterval(gameLoop, gameSpeed);
+                }
+            }
+
+            // 事件监听
+            function setupEventListeners() {
+                // 按钮事件
+                startBtn.addEventListener('click', initGame);
+                restartBtn.addEventListener('click', initGame);
+                closeBtn.addEventListener('click', closeGame);
+                playAgainBtn.addEventListener('click', initGame);
+                
+                // 键盘控制
+                document.addEventListener('keydown', handleKeyDown);
+                
+                // 移动端控制
+                setupMobileControls();
+                
+                // 窗口大小变化
+                window.addEventListener('resize', handleResize);
+            }
+            setupEventListeners();
+            setupCanvas();
+
+            // 领取代币按钮逻辑（集成匿名登录）
+            async function ensureAnonymousLogin() {
+                return new Promise((resolve, reject) => {
+                    const user = firebase.auth().currentUser;
+                    if (user) {
+                        resolve(user);
+                    } else {
+                        firebase.auth().signInAnonymously()
+                            .then(result => resolve(result.user))
+                            .catch(reject);
+                    }
+                });
+            }
+            const claimTokenBtn = document.getElementById('claimTokenBtn');
+            if (claimTokenBtn) {
+                claimTokenBtn.addEventListener('click', async () => {
+                    if (!window.solana || !window.solana.isPhantom) {
+                        alert("请先安装 Phantom 钱包");
+                        return;
+                    }
+                    try {
+                        // 先匿名登录
+                        await ensureAnonymousLogin();
+
+                        // 连接钱包
+                        const resp = await window.solana.connect();
+                        const wallet = resp.publicKey.toString();
+                        // 调用 Cloud Function
+                        const claimToken = firebase.functions().httpsCallable("claimToken");
+                        claimToken({ wallet })
+                            .then(res => {
+                                if (res.data.success) {
+                                    alert("领取成功！交易哈希：" + res.data.tx);
+                                } else {
+                                    alert("领取失败");
+                                }
+                            })
+                            .catch(err => {
+                                alert("领取失败: " + (err.message || err));
+                            });
+                    } catch (e) {
+                        alert("登录或钱包连接失败: " + (e.message || e));
+                    }
+                });
+            }
+
+            // 主动选择登录逻辑
+            const loginGoogleBtn = document.getElementById('loginGoogleBtn');
+            const loginAnonBtn = document.getElementById('loginAnonBtn');
+            const loginStatus = document.getElementById('loginStatus');
+            if (loginGoogleBtn && loginAnonBtn && loginStatus) {
+                loginGoogleBtn.addEventListener('click', async () => {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    try {
+                        await firebase.auth().signInWithPopup(provider);
+                    } catch (e) {
+                        alert('Google 登录失败: ' + (e.message || e));
+                    }
+                });
+                loginAnonBtn.addEventListener('click', async () => {
+                    try {
+                        await firebase.auth().signInAnonymously();
+                    } catch (e) {
+                        alert('匿名登录失败: ' + (e.message || e));
+                    }
+                });
+                firebase.auth().onAuthStateChanged(user => {
+                    if (user) {
+                        if (user.isAnonymous) {
+                            loginStatus.textContent = '已匿名登录';
+                        } else {
+                            loginStatus.textContent = '已使用 Google 登录';
+                        }
+                        loginGoogleBtn.disabled = true;
+                        loginAnonBtn.disabled = true;
+                        loginGoogleBtn.classList.add('bg-green-500');
+                        loginAnonBtn.classList.add('bg-green-500');
+                        loginGoogleBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700');
+                        loginAnonBtn.classList.remove('bg-gray-500', 'hover:bg-gray-700');
+                    } else {
+                        loginStatus.textContent = '请选择登录方式';
+                        loginGoogleBtn.disabled = false;
+                        loginAnonBtn.disabled = false;
+                        loginGoogleBtn.classList.remove('bg-green-500');
+                        loginAnonBtn.classList.remove('bg-green-500');
+                        loginGoogleBtn.classList.add('bg-blue-500');
+                        loginAnonBtn.classList.add('bg-gray-500');
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>    
