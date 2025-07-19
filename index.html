@@ -235,19 +235,30 @@
 
         const connectWalletBtn = document.getElementById('connectWalletBtn');
         const walletBtnText = document.getElementById('walletBtnText');
+        let isWalletConnected = false;
 
         // 页面加载时自动恢复钱包地址
         function restoreWalletAddress() {
             const saved = localStorage.getItem('userWalletAddress');
             if (saved) {
                 userWalletAddress = saved;
-                walletBtnText.textContent = userWalletAddress.slice(0, 4) + "..." + userWalletAddress.slice(-4);
-                connectWalletBtn.disabled = true;
+                walletBtnText.textContent = userWalletAddress.slice(0, 4) + "..." + userWalletAddress.slice(-4) + " (点击断开)";
+                connectWalletBtn.disabled = false;
+                isWalletConnected = true;
             }
         }
         restoreWalletAddress();
 
         async function connectWallet() {
+            if (isWalletConnected) {
+                // 断开连接
+                userWalletAddress = null;
+                localStorage.removeItem('userWalletAddress');
+                walletBtnText.textContent = "连接钱包";
+                connectWalletBtn.disabled = false;
+                isWalletConnected = false;
+                return;
+            }
             if (!window.solana || !window.solana.isPhantom) {
                 alert("请先安装 Phantom 钱包");
                 return;
@@ -255,9 +266,10 @@
             try {
                 const resp = await window.solana.connect();
                 userWalletAddress = resp.publicKey.toString();
-                walletBtnText.textContent = userWalletAddress.slice(0, 4) + "..." + userWalletAddress.slice(-4);
-                connectWalletBtn.disabled = true;
+                walletBtnText.textContent = userWalletAddress.slice(0, 4) + "..." + userWalletAddress.slice(-4) + " (点击断开)";
+                connectWalletBtn.disabled = false;
                 localStorage.setItem('userWalletAddress', userWalletAddress);
+                isWalletConnected = true;
             } catch (e) {
                 alert("钱包连接失败: " + (e.message || e));
             }
