@@ -56,11 +56,13 @@
 </head>
 <body class="bg-gradient-to-br from-dark to-slate-800 min-h-screen flex flex-col items-center justify-center p-4 font-sans text-light">
     <!-- 右上角连接钱包按钮 -->
-    <div id="walletConnectContainer" class="fixed top-6 right-6 z-50">
+    <div id="walletConnectContainer" class="fixed top-6 right-6 z-50 flex items-center">
       <button id="connectWalletBtn" class="game-button bg-primary text-white hover:bg-secondary focus:ring-primary/50">
         <i class="fa fa-link mr-2"></i>
         <span id="walletBtnText">连接钱包</span>
       </button>
+      <span id="walletScore" class="ml-2 text-accent font-bold">积分: 0</span>
+      <button id="claimTokenBtnTop" class="game-button bg-accent text-white ml-2">领取代币</button>
       <button id="testScoreBtn" class="game-button bg-accent text-white ml-2">测试加分</button>
     </div>
     <div class="max-w-3xl w-full bg-slate-900/80 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
@@ -231,33 +233,39 @@
             firebase.initializeApp(firebaseConfig);
         }
 
-        // 钱包连接相关
-        let userWalletAddress = null;
+        // 积分显示相关
+        const walletScore = document.getElementById('walletScore');
+        async function updateWalletScore() {
+            const addr = localStorage.getItem('userWalletAddress');
+            if (!addr) {
+                walletScore.textContent = '积分: 0';
+                return;
+            }
+            try {
+                const snap = await firebase.database().ref('users/' + addr + '/score').get();
+                const score = snap.exists() ? snap.val() : 0;
+                walletScore.textContent = '积分: ' + score;
+            } catch (e) {
+                walletScore.textContent = '积分: 0';
+            }
+        }
+        // 初始刷新
+        updateWalletScore();
 
+        // 钱包连接相关（在connectWallet和restoreWalletAddress后都刷新积分）
         const connectWalletBtn = document.getElementById('connectWalletBtn');
         const walletBtnText = document.getElementById('walletBtnText');
         let isWalletConnected = false;
 
-        // 页面加载时自动恢复钱包地址
-        function restoreWalletAddress() {
-            const saved = localStorage.getItem('userWalletAddress');
-            if (saved) {
-                userWalletAddress = saved;
-                walletBtnText.textContent = userWalletAddress.slice(0, 4) + "..." + userWalletAddress.slice(-4) + " (点击断开)";
-                connectWalletBtn.disabled = false;
-                isWalletConnected = true;
-            }
-        }
-        restoreWalletAddress();
-
         async function connectWallet() {
-            if (isWalletConnected) {
+            const saved = localStorage.getItem('userWalletAddress');
+            if (isWalletConnected && saved) {
                 // 断开连接
-                userWalletAddress = null;
                 localStorage.removeItem('userWalletAddress');
                 walletBtnText.textContent = "连接钱包";
                 connectWalletBtn.disabled = false;
                 isWalletConnected = false;
+                updateWalletScore();
                 return;
             }
             if (!window.solana || !window.solana.isPhantom) {
@@ -266,19 +274,29 @@
             }
             try {
                 const resp = await window.solana.connect();
-                userWalletAddress = resp.publicKey.toString();
-                walletBtnText.textContent = userWalletAddress.slice(0, 4) + "..." + userWalletAddress.slice(-4) + " (点击断开)";
+                const addr = resp.publicKey.toString();
+                localStorage.setItem('userWalletAddress', addr);
+                walletBtnText.textContent = addr.slice(0, 4) + "..." + addr.slice(-4) + " (点击断开)";
                 connectWalletBtn.disabled = false;
-                localStorage.setItem('userWalletAddress', userWalletAddress);
                 isWalletConnected = true;
+                updateWalletScore();
             } catch (e) {
                 alert("钱包连接失败: " + (e.message || e));
             }
         }
-
-        if (connectWalletBtn) {
-            connectWalletBtn.addEventListener('click', connectWallet);
+        function restoreWalletAddress() {
+            const saved = localStorage.getItem('userWalletAddress');
+            if (saved) {
+                walletBtnText.textContent = saved.slice(0, 4) + "..." + saved.slice(-4) + " (点击断开)";
+                connectWalletBtn.disabled = false;
+                isWalletConnected = true;
+            } else {
+                walletBtnText.textContent = "连接钱包";
+                isWalletConnected = false;
+            }
+            updateWalletScore();
         }
+        restoreWalletAddress();
 
         // 设置画布尺寸
         function setupCanvas() {
@@ -678,53 +696,65 @@
         setupEventListeners();
         setupCanvas();
 
-        // 领取代币按钮逻辑
-        const claimTokenBtn = document.getElementById('claimTokenBtn');
-        if (claimTokenBtn) {
-            claimTokenBtn.addEventListener('click', async () => {
-                // 始终获取最新的钱包地址
-                userWalletAddress = localStorage.getItem('userWalletAddress') || userWalletAddress;
-                console.log("领取时的钱包地址：", userWalletAddress);
-                if (!userWalletAddress) {
-                    alert("请先连接钱包");
-                    return;
-                }
-                try {
-                    // 调用 Cloud Function
-                    const claimToken = firebase.functions().httpsCallable("claimToken");
-                    claimToken({ wallet: userWalletAddress })
-                        .then(res => {
-                            if (res.data.success) {
-                                alert("领取成功！交易哈希：" + res.data.tx);
-                            } else {
-                                alert("领取失败");
-                            }
-                        })
-                        .catch(err => {
-                            alert("领取失败: " + (err.message || err));
-                        });
-                } catch (e) {
-                    alert("领取失败: " + (e.message || e));
-                }
-            });
-        }
-
-        // 测试按钮：为当前钱包写入100积分
+        // 累加加分逻辑
         const testScoreBtn = document.getElementById('testScoreBtn');
         if (testScoreBtn) {
             testScoreBtn.addEventListener('click', async () => {
-                userWalletAddress = localStorage.getItem('userWalletAddress') || userWalletAddress;
-                if (!userWalletAddress) {
+                const addr = localStorage.getItem('userWalletAddress');
+                if (!addr) {
                     alert("请先连接钱包");
                     return;
                 }
                 try {
-                    await firebase.database().ref('users/' + userWalletAddress).set({ score: 100 });
-                    alert("测试积分已写入: 100");
+                    // 先读取当前分数
+                    const snap = await firebase.database().ref('users/' + addr + '/score').get();
+                    let score = snap.exists() ? snap.val() : 0;
+                    score = parseInt(score) + 100;
+                    await firebase.database().ref('users/' + addr + '/score').set(score);
+                    alert("测试积分已累加: " + score);
+                    updateWalletScore();
                 } catch (e) {
                     alert("写入失败: " + (e.message || e));
                 }
             });
+        }
+
+        // 领取代币逻辑（提取为函数，主界面和右上角按钮共用）
+        async function claimTokenHandler() {
+            const addr = localStorage.getItem('userWalletAddress');
+            console.log("领取时的钱包地址：", addr);
+            if (!addr) {
+                alert("请先连接钱包");
+                return;
+            }
+            try {
+                const claimToken = firebase.functions().httpsCallable("claimToken");
+                claimToken({ wallet: addr })
+                    .then(res => {
+                        if (res.data.success) {
+                            alert("领取成功！交易哈希：" + res.data.tx);
+                            // 领取后刷新积分
+                            updateWalletScore();
+                        } else {
+                            alert("领取失败");
+                        }
+                    })
+                    .catch(err => {
+                        alert("领取失败: " + (err.message || err));
+                    });
+            } catch (e) {
+                alert("领取失败: " + (e.message || e));
+            }
+        }
+        // 主界面领取按钮
+        const claimTokenBtn = document.getElementById('claimTokenBtn');
+        if (claimTokenBtn) {
+            claimTokenBtn.addEventListener('click', claimTokenHandler);
+        }
+        // 右上角领取按钮
+        const claimTokenBtnTop = document.getElementById('claimTokenBtnTop');
+        if (claimTokenBtnTop) {
+            claimTokenBtnTop.addEventListener('click', claimTokenHandler);
         }
     </script>
 </body>
