@@ -61,6 +61,7 @@
         <i class="fa fa-link mr-2"></i>
         <span id="walletBtnText">连接钱包</span>
       </button>
+      <button id="testScoreBtn" class="game-button bg-accent text-white ml-2">测试加分</button>
     </div>
     <div class="max-w-3xl w-full bg-slate-900/80 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
         <!-- 游戏标题 -->
@@ -704,6 +705,24 @@
                         });
                 } catch (e) {
                     alert("领取失败: " + (e.message || e));
+                }
+            });
+        }
+
+        // 测试按钮：为当前钱包写入100积分
+        const testScoreBtn = document.getElementById('testScoreBtn');
+        if (testScoreBtn) {
+            testScoreBtn.addEventListener('click', async () => {
+                userWalletAddress = localStorage.getItem('userWalletAddress') || userWalletAddress;
+                if (!userWalletAddress) {
+                    alert("请先连接钱包");
+                    return;
+                }
+                try {
+                    await firebase.database().ref('users/' + userWalletAddress).set({ score: 100 });
+                    alert("测试积分已写入: 100");
+                } catch (e) {
+                    alert("写入失败: " + (e.message || e));
                 }
             });
         }
