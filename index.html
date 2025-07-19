@@ -252,19 +252,34 @@
         // 初始刷新
         updateWalletScore();
 
-        // 钱包连接相关（在connectWallet和restoreWalletAddress后都刷新积分）
+        // 钱包连接相关
         const connectWalletBtn = document.getElementById('connectWalletBtn');
         const walletBtnText = document.getElementById('walletBtnText');
         let isWalletConnected = false;
+
+        function updateWalletBtnUI(addr) {
+            if (addr) {
+                walletBtnText.textContent = addr.slice(0, 4) + "..." + addr.slice(-4) + " (点击断开)";
+                isWalletConnected = true;
+            } else {
+                walletBtnText.textContent = "连接钱包";
+                isWalletConnected = false;
+            }
+        }
+
+        function restoreWalletAddress() {
+            const saved = localStorage.getItem('userWalletAddress');
+            updateWalletBtnUI(saved);
+            updateWalletScore();
+        }
+        restoreWalletAddress();
 
         async function connectWallet() {
             const saved = localStorage.getItem('userWalletAddress');
             if (isWalletConnected && saved) {
                 // 断开连接
                 localStorage.removeItem('userWalletAddress');
-                walletBtnText.textContent = "连接钱包";
-                connectWalletBtn.disabled = false;
-                isWalletConnected = false;
+                updateWalletBtnUI(null);
                 updateWalletScore();
                 return;
             }
@@ -276,27 +291,19 @@
                 const resp = await window.solana.connect();
                 const addr = resp.publicKey.toString();
                 localStorage.setItem('userWalletAddress', addr);
-                walletBtnText.textContent = addr.slice(0, 4) + "..." + addr.slice(-4) + " (点击断开)";
-                connectWalletBtn.disabled = false;
-                isWalletConnected = true;
+                updateWalletBtnUI(addr);
                 updateWalletScore();
             } catch (e) {
                 alert("钱包连接失败: " + (e.message || e));
             }
         }
-        function restoreWalletAddress() {
-            const saved = localStorage.getItem('userWalletAddress');
-            if (saved) {
-                walletBtnText.textContent = saved.slice(0, 4) + "..." + saved.slice(-4) + " (点击断开)";
-                connectWalletBtn.disabled = false;
-                isWalletConnected = true;
-            } else {
-                walletBtnText.textContent = "连接钱包";
-                isWalletConnected = false;
-            }
-            updateWalletScore();
+
+        if (connectWalletBtn) {
+            connectWalletBtn.addEventListener('click', () => {
+                console.log("点击了连接钱包按钮");
+                connectWallet();
+            });
         }
-        restoreWalletAddress();
 
         // 设置画布尺寸
         function setupCanvas() {
