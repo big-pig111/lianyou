@@ -176,6 +176,21 @@
     </div>
 
     <script>
+        // Firebase 初始化（移到最前面）
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5Z5ieEbAcfQX0kxGSn9ldGXhzvAwx_8M",
+            authDomain: "chat-294cc.firebaseapp.com",
+            databaseURL: "https://chat-294cc-default-rtdb.firebaseio.com",
+            projectId: "chat-294cc",
+            storageBucket: "chat-294cc.appspot.com",
+            messagingSenderId: "913615304269",
+            appId: "1:913615304269:web:0274ffaccb8e6b678e4e04",
+            measurementId: "G-SJR9NDW86B"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
         // 游戏常量
         const GRID_SIZE = 20;
         const INITIAL_SPEED = 150;
@@ -216,21 +231,6 @@
 
         // 初始化高分显示
         highScoreElement.textContent = highScore;
-
-        // Firebase 初始化
-        const firebaseConfig = {
-            apiKey: "AIzaSyA5Z5ieEbAcfQX0kxGSn9ldGXhzvAwx_8M",
-            authDomain: "chat-294cc.firebaseapp.com",
-            databaseURL: "https://chat-294cc-default-rtdb.firebaseio.com",
-            projectId: "chat-294cc",
-            storageBucket: "chat-294cc.appspot.com",
-            messagingSenderId: "913615304269",
-            appId: "1:913615304269:web:0274ffaccb8e6b678e4e04",
-            measurementId: "G-SJR9NDW86B"
-        };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
 
         // 设置画布尺寸
         function setupCanvas() {
