@@ -236,6 +236,17 @@
         const connectWalletBtn = document.getElementById('connectWalletBtn');
         const walletBtnText = document.getElementById('walletBtnText');
 
+        // 页面加载时自动恢复钱包地址
+        function restoreWalletAddress() {
+            const saved = localStorage.getItem('userWalletAddress');
+            if (saved) {
+                userWalletAddress = saved;
+                walletBtnText.textContent = userWalletAddress.slice(0, 4) + "..." + userWalletAddress.slice(-4);
+                connectWalletBtn.disabled = true;
+            }
+        }
+        restoreWalletAddress();
+
         async function connectWallet() {
             if (!window.solana || !window.solana.isPhantom) {
                 alert("请先安装 Phantom 钱包");
@@ -246,6 +257,7 @@
                 userWalletAddress = resp.publicKey.toString();
                 walletBtnText.textContent = userWalletAddress.slice(0, 4) + "..." + userWalletAddress.slice(-4);
                 connectWalletBtn.disabled = true;
+                localStorage.setItem('userWalletAddress', userWalletAddress);
             } catch (e) {
                 alert("钱包连接失败: " + (e.message || e));
             }
@@ -657,6 +669,9 @@
         const claimTokenBtn = document.getElementById('claimTokenBtn');
         if (claimTokenBtn) {
             claimTokenBtn.addEventListener('click', async () => {
+                // 始终获取最新的钱包地址
+                userWalletAddress = localStorage.getItem('userWalletAddress') || userWalletAddress;
+                console.log("领取时的钱包地址：", userWalletAddress);
                 if (!userWalletAddress) {
                     alert("请先连接钱包");
                     return;
