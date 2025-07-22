@@ -56,48 +56,34 @@
 </head>
 <body class="bg-gradient-to-br from-dark to-slate-800 min-h-screen flex flex-col items-center justify-center p-4 font-sans text-light">
     <!-- 左上角代币CA信息 -->
-    <div class="fixed top-6 left-6 z-50 bg-slate-800/90 px-4 py-2 rounded-lg shadow text-accent font-bold text-sm flex items-center">
-      <i class="fa fa-cube mr-2"></i>CA：soon
-    </div>
+    <div id="caInfo" class="fixed top-6 left-6 z-50 bg-slate-800/90 px-4 py-2 rounded-lg shadow text-accent font-bold text-sm flex items-center"></div>
     <!-- 侧边栏：游戏说明 -->
     <aside class="fixed top-1/2 left-8 -translate-y-1/2 w-64 bg-slate-800/80 rounded-xl shadow-lg p-6 hidden lg:block z-40">
-      <h2 class="text-lg font-bold text-light mb-2 flex items-center">
-        <i class="fa fa-book text-primary mr-2"></i>游戏说明
+      <h2 id="gameDescTitle" class="text-lg font-bold text-light mb-2 flex items-center">
+        <i class="fa fa-book text-primary mr-2"></i>
       </h2>
-      <ul class="list-disc list-inside text-sm space-y-1 text-slate-300">
-        <li>使用方向键或WASD控制蛇的移动</li>
-        <li>吃到食物得10分</li>
-        <li>本局内每获得100分，后续吃到的食物积分翻倍（仅本局有效，可多次翻倍）</li>
-        <li>撞到墙壁或自己的身体游戏结束</li>
-        <li>游戏速度会随着得分增加而提高</li>
-        <li>每获得1积分可兑换10个代币</li>
-        <li class="mt-2 font-bold text-accent">加分规则：</li>
-        <li>购买“双倍卡”可让本账号获得的积分翻倍，支持多次叠加（如2张=4倍，3张=8倍）</li>
-        <li>每邀请1位有效好友（填写你的邀请码且钱包≥1 SOL），你的积分加成+50%，可叠加</li>
-        <li>填写邀请码也可获得20%积分加成（仅加一次）</li>
-        <li>所有加成可叠加，最终得分=基础分×双倍卡倍率×邀请加成倍率×被邀请加成</li>
-      </ul>
+      <ul id="gameDescList" class="list-disc list-inside text-sm space-y-1 text-slate-300"></ul>
     </aside>
     <!-- 任务弹窗 -->
     <div id="taskModal" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center hidden">
       <div class="bg-slate-900 rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative">
         <button id="closeTaskBtn" class="absolute top-4 right-4 text-slate-400 hover:text-primary text-2xl"><i class="fa fa-times"></i></button>
-        <h2 class="text-2xl font-bold text-primary mb-6 text-center font-game"><i class="fa fa-tasks mr-2"></i>任务中心</h2>
+        <h2 id="taskCenterTitle" class="text-2xl font-bold text-primary mb-6 text-center font-game"><i class="fa fa-tasks mr-2"></i></h2>
         <div class="flex flex-col gap-4">
           <div class="flex flex-col md:flex-row md:items-center gap-2">
-            <span class="font-bold text-primary">我的邀请码：</span>
+            <span id="myInviteCodeLabel" class="font-bold text-primary"></span>
             <span id="myInviteCode" class="bg-slate-700 px-2 py-1 rounded text-accent select-all cursor-pointer"></span>
-            <button id="copyInviteCodeBtn" class="ml-2 game-button bg-primary text-white px-2 py-1 text-sm"><i class="fa fa-copy"></i> 复制</button>
+            <button id="copyInviteCodeBtn" class="ml-2 game-button bg-primary text-white px-2 py-1 text-sm"></button>
           </div>
           <div class="flex flex-col md:flex-row md:items-center gap-2">
-            <input id="inputInviteCode" type="text" placeholder="填写好友邀请码" class="px-2 py-1 rounded border border-slate-600 bg-slate-700 text-light focus:outline-none focus:ring-2 focus:ring-primary/50" />
-            <button id="submitInviteCodeBtn" class="game-button bg-accent text-white px-2 py-1 text-sm">提交</button>
+            <input id="inputInviteCode" type="text" class="px-2 py-1 rounded border border-slate-600 bg-slate-700 text-light focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            <button id="submitInviteCodeBtn" class="game-button bg-accent text-white px-2 py-1 text-sm"></button>
           </div>
           <div class="flex flex-col md:flex-row md:items-center gap-2">
-            <span class="text-slate-300">已邀请 <span id="inviteCount">0</span> 人</span>
-            <span class="text-slate-300">当前加成：<span id="inviteBonus">1.0</span>倍</span>
+            <span id="inviteCountLabel" class="text-slate-300"></span> <span id="inviteCount">0</span> <span id="peopleLabel" class="text-slate-300"></span>
+            <span id="inviteBonusLabel" class="text-slate-300"></span><span id="inviteBonus">1.0</span><span id="timesLabel" class="text-slate-300"></span>
           </div>
-          <div class="text-xs text-slate-400 mt-2 md:mt-0 w-full md:w-auto">* 只有填写邀请码的钱包余额≥1 SOL，才算有效邀请，每邀请1人积分加成+50%，可叠加</div>
+          <div id="inviteRule" class="text-xs text-slate-400 mt-2 md:mt-0 w-full md:w-auto"></div>
         </div>
       </div>
     </div>
@@ -110,25 +96,26 @@
       <span id="walletScore" class="ml-2 text-accent font-bold">积分: 0</span>
       <button id="claimTokenBtnTop" class="game-button bg-accent text-white ml-2">领取代币</button>
       <button id="testScoreBtn" class="game-button bg-accent text-white ml-2">测试加分</button>
-      <button id="shopBtn" class="game-button bg-slate-500 text-white ml-2"><i class="fa fa-shopping-cart mr-1"></i>商店</button>
-      <button id="taskBtn" class="game-button bg-slate-500 text-white ml-2 flex items-center"><i class="fa fa-tasks mr-1"></i>任务</button>
+      <button id="shopBtn" class="game-button bg-slate-500 text-white ml-2"></button>
+      <button id="taskBtn" class="game-button bg-slate-500 text-white ml-2 flex items-center"></button>
+      <button id="switchLangBtn" class="game-button bg-primary text-white ml-2"></button>
     </div>
     <!-- 商店模态弹窗 -->
     <div id="shopModal" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center hidden">
       <div class="bg-slate-900 rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
         <button id="closeShopBtn" class="absolute top-4 right-4 text-slate-400 hover:text-primary text-2xl"><i class="fa fa-times"></i></button>
-        <h2 class="text-2xl font-bold text-primary mb-6 text-center font-game"><i class="fa fa-shopping-cart mr-2"></i>游戏商店</h2>
+        <h2 class="text-2xl font-bold text-primary mb-6 text-center font-game"><i class="fa fa-shopping-cart mr-2"></i><span id="shopTitle">游戏商店</span></h2>
         <div class="bg-slate-800 rounded-lg p-4 flex flex-col items-center mb-4">
           <div class="flex items-center mb-2">
             <i class="fa fa-bolt text-accent text-3xl mr-3"></i>
-            <span class="text-xl font-bold text-light">双倍卡</span>
+            <span id="doubleCardLabel" class="text-xl font-bold text-light"></span>
           </div>
-          <p class="text-slate-300 text-center mb-2">购买后本账号获得的游戏积分永久翻倍，可叠加，每次购买价格上涨150%。</p>
+          <p id="doubleCardDesc" class="text-slate-300 text-center mb-2"></p>
           <div class="flex items-center gap-4 mt-2">
             <span id="doubleCardPrice" class="text-accent font-bold text-lg">1000</span>
-            <button id="buyDoubleCardBtn" class="game-button bg-accent text-white">购买</button>
+            <button id="buyDoubleCardBtn" class="game-button bg-accent text-white"></button>
           </div>
-          <div class="mt-2 text-slate-400 text-sm">已拥有：<span id="doubleCardCount">0</span> 张</div>
+          <div class="mt-2 text-slate-400 text-sm"><span id="doubleCardCountLabel"></span><span id="doubleCardCount">0</span></div>
         </div>
       </div>
     </div>
@@ -143,53 +130,33 @@
             <!-- 游戏信息 -->
             <div class="w-full lg:w-1/3 bg-slate-800/50 rounded-xl p-4 flex flex-col gap-4">
                 <div class="bg-slate-700/50 rounded-lg p-4">
-                    <h2 class="text-lg font-bold text-light mb-2 flex items-center">
-                        <i class="fa fa-trophy text-accent mr-2"></i>得分
+                    <h2 id="scoreTitle" class="text-lg font-bold text-light mb-2 flex items-center">
+                        <i class="fa fa-trophy text-accent mr-2"></i>
                     </h2>
                     <p class="text-4xl font-game text-center text-primary" id="score">0</p>
                 </div>
 
                 <div class="bg-slate-700/50 rounded-lg p-4">
-                    <h2 class="text-lg font-bold text-light mb-2 flex items-center">
-                        <i class="fa fa-star text-accent mr-2"></i>最高分
+                    <h2 id="highScoreTitle" class="text-lg font-bold text-light mb-2 flex items-center">
+                        <i class="fa fa-star text-accent mr-2"></i>
                     </h2>
                     <p class="text-4xl font-game text-center text-accent" id="highScore">0</p>
                 </div>
 
                 <div class="bg-slate-700/50 rounded-lg p-4">
-                    <h2 class="text-lg font-bold text-light mb-2 flex items-center">
-                        <i class="fa fa-info-circle text-primary mr-2"></i>游戏状态
+                    <h2 id="gameStatusTitle" class="text-lg font-bold text-light mb-2 flex items-center">
+                        <i class="fa fa-info-circle text-primary mr-2"></i>
                     </h2>
                     <p class="text-xl font-game text-center text-light" id="gameStatus">准备开始</p>
                 </div>
 
                 <!-- 游戏控制按钮 -->
                 <div class="flex flex-col gap-3 mt-auto">
-                    <button id="startBtn" class="game-button bg-primary text-white hover:bg-secondary focus:ring-primary/50">
-                        <i class="fa fa-play mr-2"></i>开始游戏
-                    </button>
-                    <button id="restartBtn" class="game-button bg-accent text-white hover:bg-orange-600 focus:ring-accent/50" disabled>
-                        <i class="fa fa-refresh mr-2"></i>重新开始
-                    </button>
-                    <button id="closeBtn" class="game-button bg-slate-600 text-white hover:bg-slate-700 focus:ring-slate-500/50">
-                        <i class="fa fa-times mr-2"></i>关闭游戏
-                    </button>
+                    <button id="startBtn" class="game-button bg-primary text-white hover:bg-secondary focus:ring-primary/50"></button>
+                    <button id="restartBtn" class="game-button bg-accent text-white hover:bg-orange-600 focus:ring-accent/50" disabled></button>
+                    <button id="closeBtn" class="game-button bg-slate-600 text-white hover:bg-slate-700 focus:ring-slate-500/50"></button>
                 </div>
 
-                <!-- 游戏说明 -->
-                <div class="bg-slate-700/50 rounded-lg p-4 mt-4">
-                    <h2 class="text-lg font-bold text-light mb-2 flex items-center">
-                        <i class="fa fa-book text-primary mr-2"></i>游戏说明
-                    </h2>
-                    <ul class="list-disc list-inside text-sm space-y-1 text-slate-300">
-                        <li>使用方向键或WASD控制蛇的移动</li>
-                        <li>吃到食物得10分</li>
-                        <li>本局内每获得100分，后续吃到的食物积分翻倍（仅本局有效，可多次翻倍）</li>
-                        <li>撞到墙壁或自己的身体游戏结束</li>
-                        <li>游戏速度会随着得分增加而提高</li>
-                        <li>每获得1积分可兑换10个代币</li>
-                    </ul>
-                </div>
             </div>
 
             <!-- 游戏画布 -->
@@ -236,7 +203,7 @@
 
         <!-- 游戏底部信息 -->
         <footer class="bg-slate-800/50 px-6 py-3 border-t border-slate-700 text-sm text-slate-400 flex justify-between items-center">
-            <p>© 2025 贪吃蛇大作战</p>
+            <p id="footerTitle"></p>
             <div class="flex space-x-4">
                 <a href="#" class="hover:text-primary transition-colors"><i class="fa fa-github"></i></a>
                 <a href="#" class="hover:text-primary transition-colors"><i class="fa fa-twitter"></i></a>
@@ -245,6 +212,170 @@
         </footer>
     </div>
 
+    <script>
+    // ====== 多语言文本和状态映射，必须最前面定义 ======
+    const i18n = {
+      score: { zh: "得分", en: "Score" },
+      highScore: { zh: "最高分", en: "High Score" },
+      gameStatus: { zh: "游戏状态", en: "Game Status" },
+      startGame: { zh: "开始游戏", en: "Start Game" },
+      restart: { zh: "重新开始", en: "Restart" },
+      close: { zh: "关闭游戏", en: "Close" },
+      playAgain: { zh: "再玩一次", en: "Play Again" },
+      claimToken: { zh: "领取代币", en: "Claim Token" },
+      shop: { zh: "商店", en: "Shop" },
+      task: { zh: "任务", en: "Task" },
+      connectWallet: { zh: "连接钱包", en: "Connect Wallet" },
+      disconnectWallet: { zh: "断开钱包", en: "Disconnect Wallet" },
+      walletScore: { zh: "积分", en: "Points" },
+      testScore: { zh: "测试加分", en: "Test Score" },
+      doubleCard: { zh: "双倍卡", en: "Double Card" },
+      doubleCardDesc: { zh: "购买后本账号获得的游戏积分永久翻倍，可叠加，每次购买价格上涨150%。", en: "Doubles your game points permanently, can be stacked, price increases by 150% each time." },
+      buy: { zh: "购买", en: "Buy" },
+      owned: { zh: "已拥有", en: "Owned" },
+      gameDescTitle: { zh: "游戏说明", en: "Game Instructions" },
+      gameDesc: {
+        zh: [
+          "使用方向键或WASD控制蛇的移动",
+          "吃到食物得10分",
+          "本局内每获得100分，后续吃到的食物积分翻倍（仅本局有效，可多次翻倍）",
+          "撞到墙壁或自己的身体游戏结束",
+          "游戏速度会随着得分增加而提高",
+          "每获得1积分可兑换10个代币",
+          "加分规则：",
+          "购买“双倍卡”可让本账号获得的积分翻倍，支持多次叠加（如2张=4倍，3张=8倍）",
+          "每邀请1位有效好友（填写你的邀请码且钱包≥1 SOL），你的积分加成+50%，可叠加",
+          "填写邀请码也可获得20%积分加成（仅加一次）",
+          "所有加成可叠加，最终得分=基础分×双倍卡倍率×邀请加成倍率×被邀请加成"
+        ],
+        en: [
+          "Use arrow keys or WASD to control the snake",
+          "Earn 10 points for each food eaten",
+          "For every 100 points in a game, food points double (only for this game, can stack multiple times)",
+          "Game ends if you hit the wall or yourself",
+          "Game speed increases as your score increases",
+          "Each point can be exchanged for 10 tokens",
+          "Scoring rules:",
+          "Buying 'Double Card' doubles your points, can be stacked (2 cards=4x, 3 cards=8x)",
+          "For each valid invite (invite code filled and wallet ≥1 SOL), your points bonus +50%, can stack",
+          "Filling an invite code also gives you a 20% bonus (only once)",
+          "All bonuses stack, final score = base × double card × invite bonus × invited bonus"
+        ]
+      },
+      myInviteCode: { zh: "我的邀请码：", en: "My Invite Code:" },
+      copy: { zh: "复制", en: "Copy" },
+      copied: { zh: "已复制", en: "Copied" },
+      fillInvite: { zh: "填写好友邀请码", en: "Enter Friend's Invite Code" },
+      submit: { zh: "提交", en: "Submit" },
+      invited: { zh: "已邀请", en: "Invited" },
+      people: { zh: "人", en: "People" },
+      currentBonus: { zh: "当前加成：", en: "Current Bonus:" },
+      times: { zh: "倍", en: "x" },
+      inviteRule: { zh: "* 只有填写邀请码的钱包余额≥1 SOL，才算有效邀请，每邀请1人积分加成+50%，可叠加", en: "* Only wallets with ≥1 SOL are valid invites. Each valid invite gives +50% bonus, can stack." },
+      taskCenter: { zh: "任务中心", en: "Task Center" },
+      switchLang: { zh: "切换为英文", en: "Switch to Chinese" },
+      ca: { zh: "CA：soon", en: "CA: soon" },
+      ownedCount: { zh: "已拥有：", en: "Owned:" },
+      price: { zh: "价格：", en: "Price:" },
+      pageTitle: { zh: "贪吃蛇大作战", en: "Snake Battle" },
+      multiplierLabel: { zh: "当前总加成：", en: "Total Multiplier:" }
+    };
+    let currentLang = 'zh';
+    const statusMap = {
+      ready: { zh: '准备开始', en: 'Ready' },
+      running: { zh: '游戏进行中', en: 'Running' },
+      over: { zh: '游戏结束', en: 'Game Over' },
+      paused: { zh: '游戏暂停', en: 'Paused' },
+      closed: { zh: '游戏已关闭', en: 'Closed' }
+    };
+    function renderTexts() {
+      // 页标题
+      document.title = i18n.pageTitle[currentLang];
+      // 页脚
+      const footerTitle = document.getElementById('footerTitle');
+      if (footerTitle) footerTitle.textContent = `© 2025 ${i18n.pageTitle[currentLang]}`;
+      // 游戏状态内容
+      if (window.gameStatusElement && window.currentGameStatusKey) {
+        window.gameStatusElement.textContent = statusMap[window.currentGameStatusKey][currentLang];
+      }
+      // 倍率显示
+      const multiplierElement = document.getElementById('multiplierDisplay');
+      if (multiplierElement && typeof window.totalMultiplier !== 'undefined') {
+        multiplierElement.textContent = `${i18n.multiplierLabel[currentLang]}${window.totalMultiplier.toFixed(2)}${currentLang === 'zh' ? '倍' : 'x'}`;
+      }
+      // 顶部CA
+      const caDiv = document.getElementById('caInfo');
+      if (caDiv) caDiv.innerHTML = `<i class='fa fa-cube mr-2'></i>${i18n.ca[currentLang]}`;
+      // 游戏说明
+      const descTitle = document.getElementById('gameDescTitle');
+      if (descTitle) descTitle.textContent = i18n.gameDescTitle[currentLang];
+      const descList = document.getElementById('gameDescList');
+      if (descList) {
+        descList.innerHTML = '';
+        i18n.gameDesc[currentLang].forEach(line => {
+          const li = document.createElement('li');
+          li.textContent = line;
+          descList.appendChild(li);
+        });
+      }
+      // 得分区
+      const scoreTitle = document.getElementById('scoreTitle');
+      if (scoreTitle) scoreTitle.textContent = i18n.score[currentLang];
+      const highScoreTitle = document.getElementById('highScoreTitle');
+      if (highScoreTitle) highScoreTitle.textContent = i18n.highScore[currentLang];
+      const gameStatusTitle = document.getElementById('gameStatusTitle');
+      if (gameStatusTitle) gameStatusTitle.textContent = i18n.gameStatus[currentLang];
+      // 按钮
+      const startBtn = document.getElementById('startBtn');
+      if (startBtn) startBtn.innerHTML = `<i class='fa fa-play mr-2'></i>${i18n.startGame[currentLang]}`;
+      const restartBtn = document.getElementById('restartBtn');
+      if (restartBtn) restartBtn.innerHTML = `<i class='fa fa-refresh mr-2'></i>${i18n.restart[currentLang]}`;
+      const closeBtn = document.getElementById('closeBtn');
+      if (closeBtn) closeBtn.innerHTML = `<i class='fa fa-times mr-2'></i>${i18n.close[currentLang]}`;
+      const playAgainBtn = document.getElementById('playAgainBtn');
+      if (playAgainBtn) playAgainBtn.innerHTML = `<i class='fa fa-refresh mr-2'></i>${i18n.playAgain[currentLang]}`;
+      const claimTokenBtn = document.getElementById('claimTokenBtn');
+      if (claimTokenBtn) claimTokenBtn.textContent = i18n.claimToken[currentLang];
+      const claimTokenBtnTop = document.getElementById('claimTokenBtnTop');
+      if (claimTokenBtnTop) claimTokenBtnTop.textContent = i18n.claimToken[currentLang];
+      const shopBtn = document.getElementById('shopBtn');
+      if (shopBtn) shopBtn.innerHTML = `<i class='fa fa-shopping-cart mr-1'></i>${i18n.shop[currentLang]}`;
+      const taskBtn = document.getElementById('taskBtn');
+      if (taskBtn) taskBtn.innerHTML = `<i class='fa fa-tasks mr-1'></i>${i18n.task[currentLang]}`;
+      const connectWalletBtn = document.getElementById('connectWalletBtn');
+      if (connectWalletBtn) connectWalletBtn.innerHTML = `<i class='fa fa-link mr-2'></i>${i18n.connectWallet[currentLang]}`;
+      const testScoreBtn = document.getElementById('testScoreBtn');
+      if (testScoreBtn) testScoreBtn.textContent = i18n.testScore[currentLang];
+      // 商店
+      const buyDoubleCardBtn = document.getElementById('buyDoubleCardBtn');
+      if (buyDoubleCardBtn) buyDoubleCardBtn.textContent = i18n.buy[currentLang];
+      const doubleCardCountLabel = document.getElementById('doubleCardCountLabel');
+      if (doubleCardCountLabel) doubleCardCountLabel.textContent = i18n.ownedCount[currentLang];
+      const doubleCardLabel = document.getElementById('doubleCardLabel');
+      if (doubleCardLabel) doubleCardLabel.textContent = i18n.doubleCard[currentLang];
+      const doubleCardDesc = document.getElementById('doubleCardDesc');
+      if (doubleCardDesc) doubleCardDesc.textContent = i18n.doubleCardDesc[currentLang];
+      // 任务弹窗
+      const myInviteCodeLabel = document.getElementById('myInviteCodeLabel');
+      if (myInviteCodeLabel) myInviteCodeLabel.textContent = i18n.myInviteCode[currentLang];
+      const copyInviteCodeBtn = document.getElementById('copyInviteCodeBtn');
+      if (copyInviteCodeBtn) copyInviteCodeBtn.textContent = i18n.copy[currentLang];
+      const inputInviteCode = document.getElementById('inputInviteCode');
+      if (inputInviteCode) inputInviteCode.placeholder = i18n.fillInvite[currentLang];
+      const submitInviteCodeBtn = document.getElementById('submitInviteCodeBtn');
+      if (submitInviteCodeBtn) submitInviteCodeBtn.textContent = i18n.submit[currentLang];
+      const inviteCountLabel = document.getElementById('inviteCountLabel');
+      if (inviteCountLabel) inviteCountLabel.textContent = i18n.invited[currentLang];
+      const inviteBonusLabel = document.getElementById('inviteBonusLabel');
+      if (inviteBonusLabel) inviteBonusLabel.textContent = i18n.currentBonus[currentLang];
+      const inviteRule = document.getElementById('inviteRule');
+      if (inviteRule) inviteRule.textContent = i18n.inviteRule[currentLang];
+      const taskCenterTitle = document.getElementById('taskCenterTitle');
+      if (taskCenterTitle) taskCenterTitle.textContent = i18n.taskCenter[currentLang];
+      const switchLangBtn = document.getElementById('switchLangBtn');
+      if (switchLangBtn) switchLangBtn.textContent = i18n.switchLang[currentLang];
+    }
+    </script>
     <script>
         // 游戏常量
         const GRID_SIZE = 20;
@@ -264,6 +395,12 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
+        // 新增：显示总加成倍数
+        let totalMultiplier = 1.0;
+        const multiplierElement = document.createElement('div');
+        multiplierElement.className = 'text-xs text-accent text-center mt-1';
+        multiplierElement.id = 'multiplierDisplay';
+        scoreElement.parentElement.appendChild(multiplierElement);
         const highScoreElement = document.getElementById('highScore');
         const gameStatusElement = document.getElementById('gameStatus');
         const startBtn = document.getElementById('startBtn');
@@ -284,8 +421,13 @@
         let direction = '';
         let nextDirection = '';
         let gameSpeed = INITIAL_SPEED;
-        let score = 0;
+        let score = 0;         // 显示和上传用
+        let baseScore = 0;     // 只加基础分
         let highScore = localStorage.getItem('snakeHighScore') || 0;
+        // 新增：本地缓存加成
+        window.doubleCardCount = 0;
+        window.inviteBonus = 1.0;
+        window.invitedBonus = 1.0;
         let gameInterval;
         let isGameRunning = false;
         let canvasSize = 0;
@@ -615,12 +757,44 @@
             }
         });
 
-        // 页面加载时刷新任务栏
+        // 页面加载时刷新任务栏和加成
         loadInviteTaskBar();
-        // 钱包连接后刷新任务数据
-        connectWalletBtn.addEventListener('click', () => {
-            setTimeout(loadInviteTaskBar, 1000);
-        });
+        fetchAllMultipliers();
+
+        // 拉取加成数据（游戏开始时和钱包连接后）
+        async function fetchAllMultipliers() {
+            const addr = localStorage.getItem('userWalletAddress');
+            if (!addr) {
+                window.doubleCardCount = 0;
+                window.inviteBonus = 1.0;
+                window.invitedBonus = 1.0;
+                totalMultiplier = 1.0;
+                updateMultiplierDisplay();
+                return;
+            }
+            try {
+                const snap = await firebase.database().ref('users/' + addr).get();
+                const data = snap.exists() ? snap.val() : {};
+                window.doubleCardCount = data.doubleCardCount || 0;
+                window.inviteBonus = data.inviteBonus || 1.0;
+                window.invitedBonus = data.invitedBonus || 1.0;
+                totalMultiplier = Math.pow(2, window.doubleCardCount) * window.inviteBonus * window.invitedBonus;
+                updateMultiplierDisplay();
+            } catch (e) {
+                window.doubleCardCount = 0;
+                window.inviteBonus = 1.0;
+                window.invitedBonus = 1.0;
+                totalMultiplier = 1.0;
+                updateMultiplierDisplay();
+            }
+        }
+
+        function updateMultiplierDisplay() {
+            const multiplierElement = document.getElementById('multiplierDisplay');
+            if (multiplierElement) {
+                multiplierElement.textContent = `${i18n.multiplierLabel[currentLang]}${totalMultiplier.toFixed(2)}${currentLang === 'zh' ? '倍' : 'x'}`;
+            }
+        }
 
         // 设置画布尺寸
         function setupCanvas() {
@@ -637,8 +811,10 @@
 
         // 初始化游戏
         function initGame() {
+            window.currentGameStatusKey = 'running';
             setupCanvas();
-            
+            // 拉取加成数据
+            fetchAllMultipliers();
             // 初始化蛇 - 从中间开始
             const centerPos = Math.floor(GRID_SIZE / 2);
             snake = [
@@ -646,30 +822,24 @@
                 {x: centerPos - 1, y: centerPos},
                 {x: centerPos - 2, y: centerPos}
             ];
-            
             // 初始化方向
             direction = 'right';
             nextDirection = 'right';
-            
             // 生成食物
             generateFood();
-            
             // 重置分数和速度
             score = 0;
+            baseScore = 0;
             gameSpeed = INITIAL_SPEED;
-            
             // 更新UI
             updateScore();
-            gameStatusElement.textContent = '游戏进行中';
-            
+            gameStatusElement.textContent = statusMap['running'][currentLang];
             // 隐藏游戏结束画面
             gameOverElement.classList.add('hidden');
-            
             // 启用/禁用按钮
             startBtn.disabled = true;
             restartBtn.disabled = false;
             closeBtn.disabled = false;
-            
             // 开始游戏循环
             if (gameInterval) clearInterval(gameInterval);
             gameInterval = setInterval(gameLoop, gameSpeed);
@@ -701,7 +871,6 @@
         function gameLoop() {
             // 更新方向
             direction = nextDirection;
-            
             // 检查是否撞到墙壁
             const head = {x: snake[0].x, y: snake[0].y};
             switch (direction) {
@@ -718,13 +887,11 @@
                     head.x++;
                     break;
             }
-            
             // 检查碰撞
             if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
                 gameOver();
                 return;
             }
-            
             // 检查是否撞到自己
             for (let i = 0; i < snake.length; i++) {
                 if (snake[i].x === head.x && snake[i].y === head.y) {
@@ -732,20 +899,24 @@
                     return;
                 }
             }
-            
             // 将新头部添加到蛇
             snake.unshift(head);
-            
             // 检查是否吃到食物
             if (head.x === food.x && head.y === food.y) {
                 // 新规则：每100分食物积分翻倍
-                const foodPoints = getCurrentFoodPoints(score);
-                score += foodPoints;
+                const foodPoints = getCurrentFoodPoints(baseScore);
+                baseScore += foodPoints;
+                // 取本地缓存加成
+                const doubleCardCount = window.doubleCardCount || 0;
+                const inviteBonus = window.inviteBonus || 1.0;
+                const invitedBonus = window.invitedBonus || 1.0;
+                totalMultiplier = Math.pow(2, doubleCardCount) * inviteBonus * invitedBonus;
+                updateMultiplierDisplay();
+                const addScore = Math.floor(foodPoints * totalMultiplier);
+                score += addScore;
                 updateScore();
-                
                 // 生成新食物
                 generateFood();
-                
                 // 提高游戏速度（有上限）
                 if (gameSpeed > MIN_SPEED) {
                     gameSpeed -= SPEED_INCREMENT;
@@ -756,7 +927,6 @@
                 // 如果没吃到食物，移除尾部
                 snake.pop();
             }
-            
             // 绘制游戏
             drawGame();
         }
@@ -886,11 +1056,9 @@
 
         // 游戏结束
         function gameOver() {
+            window.currentGameStatusKey = 'over';
             clearInterval(gameInterval);
             isGameRunning = false;
-            
-            // 更新游戏状态
-            gameStatusElement.textContent = '游戏结束';
             
             // 上传分数
             uploadGameScore(score);
@@ -907,6 +1075,7 @@
 
         // 关闭游戏
         function closeGame() {
+            window.currentGameStatusKey = 'closed';
             clearInterval(gameInterval);
             isGameRunning = false;
             
@@ -916,7 +1085,7 @@
             nextDirection = '';
             
             // 更新UI
-            gameStatusElement.textContent = '游戏已关闭';
+            gameStatusElement.textContent = statusMap['closed'][currentLang];
             scoreElement.textContent = '0';
             
             // 清空画布
@@ -1008,10 +1177,12 @@
             if (gameInterval) {
                 clearInterval(gameInterval);
                 gameInterval = null;
-                gameStatusElement.textContent = '游戏暂停';
+                window.currentGameStatusKey = 'paused';
+                gameStatusElement.textContent = statusMap['paused'][currentLang];
             } else {
                 gameInterval = setInterval(gameLoop, gameSpeed);
-                gameStatusElement.textContent = '游戏进行中';
+                window.currentGameStatusKey = 'running';
+                gameStatusElement.textContent = statusMap['running'][currentLang];
             }
         }
 
@@ -1114,6 +1285,20 @@
         if (claimTokenBtnTop) {
             claimTokenBtnTop.addEventListener('click', claimTokenHandler);
         }
+    </script>
+    <script>
+    // ====== 多语言文本 ======
+    // 切换语言按钮事件
+    document.addEventListener('DOMContentLoaded', function() {
+      const switchLangBtn = document.getElementById('switchLangBtn');
+      if (switchLangBtn) {
+        switchLangBtn.onclick = function() {
+          currentLang = currentLang === 'zh' ? 'en' : 'zh';
+          renderTexts();
+        };
+      }
+      renderTexts();
+    });
     </script>
 </body>
 </html>    
