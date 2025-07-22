@@ -55,6 +55,51 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-functions-compat.js"></script>
 </head>
 <body class="bg-gradient-to-br from-dark to-slate-800 min-h-screen flex flex-col items-center justify-center p-4 font-sans text-light">
+    <!-- 左上角代币CA信息 -->
+    <div class="fixed top-6 left-6 z-50 bg-slate-800/90 px-4 py-2 rounded-lg shadow text-accent font-bold text-sm flex items-center">
+      <i class="fa fa-cube mr-2"></i>CA：soon
+    </div>
+    <!-- 侧边栏：游戏说明 -->
+    <aside class="fixed top-1/2 left-8 -translate-y-1/2 w-64 bg-slate-800/80 rounded-xl shadow-lg p-6 hidden lg:block z-40">
+      <h2 class="text-lg font-bold text-light mb-2 flex items-center">
+        <i class="fa fa-book text-primary mr-2"></i>游戏说明
+      </h2>
+      <ul class="list-disc list-inside text-sm space-y-1 text-slate-300">
+        <li>使用方向键或WASD控制蛇的移动</li>
+        <li>吃到食物得10分</li>
+        <li>本局内每获得100分，后续吃到的食物积分翻倍（仅本局有效，可多次翻倍）</li>
+        <li>撞到墙壁或自己的身体游戏结束</li>
+        <li>游戏速度会随着得分增加而提高</li>
+        <li>每获得1积分可兑换10个代币</li>
+        <li class="mt-2 font-bold text-accent">加分规则：</li>
+        <li>购买“双倍卡”可让本账号获得的积分翻倍，支持多次叠加（如2张=4倍，3张=8倍）</li>
+        <li>每邀请1位有效好友（填写你的邀请码且钱包≥1 SOL），你的积分加成+50%，可叠加</li>
+        <li>所有加成可叠加，最终得分=基础分×双倍卡倍率×邀请加成倍率</li>
+      </ul>
+    </aside>
+    <!-- 任务弹窗 -->
+    <div id="taskModal" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center hidden">
+      <div class="bg-slate-900 rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative">
+        <button id="closeTaskBtn" class="absolute top-4 right-4 text-slate-400 hover:text-primary text-2xl"><i class="fa fa-times"></i></button>
+        <h2 class="text-2xl font-bold text-primary mb-6 text-center font-game"><i class="fa fa-tasks mr-2"></i>任务中心</h2>
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col md:flex-row md:items-center gap-2">
+            <span class="font-bold text-primary">我的邀请码：</span>
+            <span id="myInviteCode" class="bg-slate-700 px-2 py-1 rounded text-accent select-all cursor-pointer"></span>
+            <button id="copyInviteCodeBtn" class="ml-2 game-button bg-primary text-white px-2 py-1 text-sm"><i class="fa fa-copy"></i> 复制</button>
+          </div>
+          <div class="flex flex-col md:flex-row md:items-center gap-2">
+            <input id="inputInviteCode" type="text" placeholder="填写好友邀请码" class="px-2 py-1 rounded border border-slate-600 bg-slate-700 text-light focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            <button id="submitInviteCodeBtn" class="game-button bg-accent text-white px-2 py-1 text-sm">提交</button>
+          </div>
+          <div class="flex flex-col md:flex-row md:items-center gap-2">
+            <span class="text-slate-300">已邀请 <span id="inviteCount">0</span> 人</span>
+            <span class="text-slate-300">当前加成：<span id="inviteBonus">1.0</span>倍</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-2 md:mt-0 w-full md:w-auto">* 只有填写邀请码的钱包余额≥1 SOL，才算有效邀请，每邀请1人积分加成+50%，可叠加</div>
+        </div>
+      </div>
+    </div>
     <!-- 右上角连接钱包按钮 -->
     <div id="walletConnectContainer" class="fixed top-6 right-6 z-50 flex items-center">
       <button id="connectWalletBtn" class="game-button bg-primary text-white hover:bg-secondary focus:ring-primary/50">
@@ -64,6 +109,27 @@
       <span id="walletScore" class="ml-2 text-accent font-bold">积分: 0</span>
       <button id="claimTokenBtnTop" class="game-button bg-accent text-white ml-2">领取代币</button>
       <button id="testScoreBtn" class="game-button bg-accent text-white ml-2">测试加分</button>
+      <button id="shopBtn" class="game-button bg-slate-500 text-white ml-2"><i class="fa fa-shopping-cart mr-1"></i>商店</button>
+      <button id="taskBtn" class="game-button bg-slate-500 text-white ml-2 flex items-center"><i class="fa fa-tasks mr-1"></i>任务</button>
+    </div>
+    <!-- 商店模态弹窗 -->
+    <div id="shopModal" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center hidden">
+      <div class="bg-slate-900 rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
+        <button id="closeShopBtn" class="absolute top-4 right-4 text-slate-400 hover:text-primary text-2xl"><i class="fa fa-times"></i></button>
+        <h2 class="text-2xl font-bold text-primary mb-6 text-center font-game"><i class="fa fa-shopping-cart mr-2"></i>游戏商店</h2>
+        <div class="bg-slate-800 rounded-lg p-4 flex flex-col items-center mb-4">
+          <div class="flex items-center mb-2">
+            <i class="fa fa-bolt text-accent text-3xl mr-3"></i>
+            <span class="text-xl font-bold text-light">双倍卡</span>
+          </div>
+          <p class="text-slate-300 text-center mb-2">购买后本账号获得的游戏积分永久翻倍，可叠加，每次购买价格上涨150%。</p>
+          <div class="flex items-center gap-4 mt-2">
+            <span id="doubleCardPrice" class="text-accent font-bold text-lg">1000</span>
+            <button id="buyDoubleCardBtn" class="game-button bg-accent text-white">购买</button>
+          </div>
+          <div class="mt-2 text-slate-400 text-sm">已拥有：<span id="doubleCardCount">0</span> 张</div>
+        </div>
+      </div>
     </div>
     <div class="max-w-3xl w-full bg-slate-900/80 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
         <!-- 游戏标题 -->
@@ -117,8 +183,10 @@
                     <ul class="list-disc list-inside text-sm space-y-1 text-slate-300">
                         <li>使用方向键或WASD控制蛇的移动</li>
                         <li>吃到食物得10分</li>
+                        <li>本局内每获得100分，后续吃到的食物积分翻倍（仅本局有效，可多次翻倍）</li>
                         <li>撞到墙壁或自己的身体游戏结束</li>
                         <li>游戏速度会随着得分增加而提高</li>
+                        <li>每获得1积分可兑换10个代币</li>
                     </ul>
                 </div>
             </div>
@@ -182,7 +250,14 @@
         const INITIAL_SPEED = 150;
         const MIN_SPEED = 60;
         const SPEED_INCREMENT = 5;
-        const POINTS_PER_FOOD = 10;
+        const BASE_POINTS_PER_FOOD = 10;
+
+        // 新增：每100分食物积分翻倍（本局内）
+        function getCurrentFoodPoints(score) {
+            // 100分一档，10分起步
+            const times = Math.floor(score / 100);
+            return BASE_POINTS_PER_FOOD * Math.pow(2, times);
+        }
 
         // 获取DOM元素
         const canvas = document.getElementById('gameCanvas');
@@ -305,6 +380,247 @@
             });
         }
 
+        // 商店弹窗逻辑
+        const shopBtn = document.getElementById('shopBtn');
+        const shopModal = document.getElementById('shopModal');
+        const closeShopBtn = document.getElementById('closeShopBtn');
+        shopBtn.addEventListener('click', () => {
+            shopModal.classList.remove('hidden');
+        });
+        closeShopBtn.addEventListener('click', () => {
+            shopModal.classList.add('hidden');
+        });
+        // 点击弹窗外部关闭
+        shopModal.addEventListener('click', (e) => {
+            if (e.target === shopModal) {
+                shopModal.classList.add('hidden');
+            }
+        });
+
+        // 商店相关变量
+        const buyDoubleCardBtn = document.getElementById('buyDoubleCardBtn');
+        const doubleCardPriceSpan = document.getElementById('doubleCardPrice');
+        const doubleCardCountSpan = document.getElementById('doubleCardCount');
+        let doubleCardCount = 0;
+        let doubleCardPrice = 1000;
+
+        // 读取双倍卡数据
+        async function loadDoubleCardData() {
+            const addr = localStorage.getItem('userWalletAddress');
+            if (!addr) {
+                doubleCardCount = 0;
+                doubleCardPrice = 1000;
+                doubleCardCountSpan.textContent = '0';
+                doubleCardPriceSpan.textContent = '1000';
+                return;
+            }
+            try {
+                const snap = await firebase.database().ref('users/' + addr).get();
+                const data = snap.exists() ? snap.val() : {};
+                doubleCardCount = data.doubleCardCount || 0;
+                doubleCardPrice = data.doubleCardPrice || 1000;
+                doubleCardCountSpan.textContent = doubleCardCount;
+                doubleCardPriceSpan.textContent = doubleCardPrice;
+            } catch (e) {
+                doubleCardCount = 0;
+                doubleCardPrice = 1000;
+                doubleCardCountSpan.textContent = '0';
+                doubleCardPriceSpan.textContent = '1000';
+            }
+        }
+
+        // 打开商店时刷新
+        shopBtn.addEventListener('click', () => {
+            shopModal.classList.remove('hidden');
+            loadDoubleCardData();
+        });
+
+        // 购买双倍卡
+        buyDoubleCardBtn.addEventListener('click', async () => {
+            const addr = localStorage.getItem('userWalletAddress');
+            if (!addr) {
+                alert('请先连接钱包');
+                return;
+            }
+            // 先获取最新积分和双倍卡数据
+            const userRef = firebase.database().ref('users/' + addr);
+            const snap = await userRef.get();
+            const data = snap.exists() ? snap.val() : {};
+            let score = data.score || 0;
+            let count = data.doubleCardCount || 0;
+            let price = data.doubleCardPrice || 1000;
+            if (score < price) {
+                alert('积分不足，无法购买');
+                return;
+            }
+            // 计算新价格
+            const newCount = count + 1;
+            const newPrice = Math.ceil(price * 2.5);
+            // 扣除积分并更新
+            await userRef.update({
+                score: score - price,
+                doubleCardCount: newCount,
+                doubleCardPrice: newPrice
+            });
+            alert('购买成功！');
+            loadDoubleCardData();
+            updateWalletScore();
+        });
+
+        // 任务栏相关变量
+        const myInviteCodeSpan = document.getElementById('myInviteCode');
+        const copyInviteCodeBtn = document.getElementById('copyInviteCodeBtn');
+        const inputInviteCode = document.getElementById('inputInviteCode');
+        const submitInviteCodeBtn = document.getElementById('submitInviteCodeBtn');
+        const inviteCountSpan = document.getElementById('inviteCount');
+        const inviteBonusSpan = document.getElementById('inviteBonus');
+
+        // 显示邀请码（用钱包地址后8位）
+        function getMyInviteCode() {
+            const addr = localStorage.getItem('userWalletAddress');
+            if (!addr) return '';
+            return addr.slice(-8);
+        }
+
+        // 复制邀请码
+        copyInviteCodeBtn.addEventListener('click', () => {
+            const code = myInviteCodeSpan.textContent;
+            navigator.clipboard.writeText(code);
+            copyInviteCodeBtn.textContent = '已复制';
+            setTimeout(() => { copyInviteCodeBtn.innerHTML = '<i class="fa fa-copy"></i> 复制'; }, 1200);
+        });
+
+        // 加载任务栏数据
+        async function loadInviteTaskBar() {
+            const addr = localStorage.getItem('userWalletAddress');
+            if (!addr) {
+                myInviteCodeSpan.textContent = '';
+                inviteCountSpan.textContent = '0';
+                inviteBonusSpan.textContent = '1.0';
+                inputInviteCode.disabled = true;
+                submitInviteCodeBtn.disabled = true;
+                return;
+            }
+            myInviteCodeSpan.textContent = getMyInviteCode();
+            inputInviteCode.disabled = false;
+            submitInviteCodeBtn.disabled = false;
+            try {
+                const snap = await firebase.database().ref('users/' + addr).get();
+                const data = snap.exists() ? snap.val() : {};
+                inviteCountSpan.textContent = data.inviteCount || 0;
+                inviteBonusSpan.textContent = data.inviteBonus ? data.inviteBonus.toFixed(2) : '1.0';
+                if (data.invitedBy) {
+                    inputInviteCode.value = data.invitedBy;
+                    inputInviteCode.disabled = true;
+                    submitInviteCodeBtn.disabled = true;
+                }
+            } catch (e) {
+                inviteCountSpan.textContent = '0';
+                inviteBonusSpan.textContent = '1.0';
+            }
+        }
+
+        // 检查钱包余额是否≥1 SOL
+        async function checkWalletBalance1SOL(addr) {
+            try {
+                if (!window.solana) return false;
+                const connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
+                const pubkey = new solanaWeb3.PublicKey(addr);
+                const balance = await connection.getBalance(pubkey);
+                return balance >= 1e9; // 1 SOL = 1e9 lamports
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // 提交邀请码
+        submitInviteCodeBtn.addEventListener('click', async () => {
+            const addr = localStorage.getItem('userWalletAddress');
+            const code = inputInviteCode.value.trim();
+            if (!addr || !code) {
+                alert('请先连接钱包并填写邀请码');
+                return;
+            }
+            if (code === getMyInviteCode()) {
+                alert('不能填写自己的邀请码');
+                return;
+            }
+            // 检查是否已填写过
+            const userRef = firebase.database().ref('users/' + addr);
+            const snap = await userRef.get();
+            const data = snap.exists() ? snap.val() : {};
+            if (data.invitedBy) {
+                alert('你已经填写过邀请码');
+                return;
+            }
+            // 检查钱包余额
+            submitInviteCodeBtn.disabled = true;
+            submitInviteCodeBtn.textContent = '检测中...';
+            const has1SOL = await checkWalletBalance1SOL(addr);
+            if (!has1SOL) {
+                alert('你的钱包余额不足1 SOL，无法作为有效邀请');
+                submitInviteCodeBtn.disabled = false;
+                submitInviteCodeBtn.textContent = '提交';
+                return;
+            }
+            // 查找邀请人钱包地址
+            let inviterAddr = null;
+            const usersSnap = await firebase.database().ref('users').get();
+            usersSnap.forEach(child => {
+                const childAddr = child.key;
+                if (childAddr && childAddr.slice(-8) === code) {
+                    inviterAddr = childAddr;
+                }
+            });
+            if (!inviterAddr) {
+                alert('邀请码无效');
+                submitInviteCodeBtn.disabled = false;
+                submitInviteCodeBtn.textContent = '提交';
+                return;
+            }
+            // 更新自己
+            await userRef.update({ invitedBy: code });
+            // 更新邀请人
+            const inviterRef = firebase.database().ref('users/' + inviterAddr);
+            const inviterSnap = await inviterRef.get();
+            const inviterData = inviterSnap.exists() ? inviterSnap.val() : {};
+            const newInviteCount = (inviterData.inviteCount || 0) + 1;
+            const newInviteBonus = (inviterData.inviteBonus || 1.0) + 0.5;
+            const invitees = inviterData.invitees || [];
+            if (!invitees.includes(addr)) invitees.push(addr);
+            await inviterRef.update({
+                inviteCount: newInviteCount,
+                inviteBonus: newInviteBonus,
+                invitees: invitees
+            });
+            alert('填写成功！你已成为有效邀请用户');
+            loadInviteTaskBar();
+        });
+
+        // 任务弹窗逻辑
+        const taskBtn = document.getElementById('taskBtn');
+        const taskModal = document.getElementById('taskModal');
+        const closeTaskBtn = document.getElementById('closeTaskBtn');
+        taskBtn.addEventListener('click', () => {
+            taskModal.classList.remove('hidden');
+            loadInviteTaskBar();
+        });
+        closeTaskBtn.addEventListener('click', () => {
+            taskModal.classList.add('hidden');
+        });
+        taskModal.addEventListener('click', (e) => {
+            if (e.target === taskModal) {
+                taskModal.classList.add('hidden');
+            }
+        });
+
+        // 页面加载时刷新任务栏
+        loadInviteTaskBar();
+        // 钱包连接后刷新任务数据
+        connectWalletBtn.addEventListener('click', () => {
+            setTimeout(loadInviteTaskBar, 1000);
+        });
+
         // 设置画布尺寸
         function setupCanvas() {
             // 响应式画布尺寸
@@ -421,8 +737,9 @@
             
             // 检查是否吃到食物
             if (head.x === food.x && head.y === food.y) {
-                // 增加分数
-                score += POINTS_PER_FOOD;
+                // 新规则：每100分食物积分翻倍
+                const foodPoints = getCurrentFoodPoints(score);
+                score += foodPoints;
                 updateScore();
                 
                 // 生成新食物
@@ -542,21 +859,22 @@
                 console.log("用户未连接钱包，本次游戏分数不记录");
                 return;
             }
-
             if (gameScore <= 0) {
                 return;
             }
-
             try {
-                const userScoreRef = firebase.database().ref('users/' + addr + '/score');
-                const snap = await userScoreRef.get();
-                const currentTotalScore = snap.exists() ? snap.val() : 0;
-                const newTotalScore = parseInt(currentTotalScore) + gameScore;
-
-                await userScoreRef.set(newTotalScore);
+                const userRef = firebase.database().ref('users/' + addr);
+                const snap = await userRef.get();
+                const data = snap.exists() ? snap.val() : {};
+                const doubleCardCount = data.doubleCardCount || 0;
+                const inviteBonus = data.inviteBonus || 1.0;
+                const currentTotalScore = data.score || 0;
+                // 计算最终分数
+                const multiplier = Math.pow(2, doubleCardCount) * inviteBonus;
+                const finalScore = Math.floor(gameScore * multiplier);
+                const newTotalScore = parseInt(currentTotalScore) + finalScore;
+                await userRef.update({ score: newTotalScore });
                 console.log(`分数上传成功，新总分: ${newTotalScore}`);
-                
-                // 更新钱包积分显示
                 updateWalletScore();
             } catch (e) {
                 console.error("分数上传失败: ", e);
