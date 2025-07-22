@@ -343,7 +343,13 @@
       const taskBtn = document.getElementById('taskBtn');
       if (taskBtn) taskBtn.innerHTML = `<i class='fa fa-tasks mr-1'></i>${i18n.task[currentLang]}`;
       const connectWalletBtn = document.getElementById('connectWalletBtn');
-      if (connectWalletBtn) connectWalletBtn.innerHTML = `<i class='fa fa-link mr-2'></i>${i18n.connectWallet[currentLang]}`;
+      if (connectWalletBtn) {
+        // 只在未连接时渲染“连接钱包”，已连接时不覆盖
+        const saved = localStorage.getItem('userWalletAddress');
+        if (!saved) {
+          connectWalletBtn.innerHTML = `<i class='fa fa-link mr-2'></i>${i18n.connectWallet[currentLang]}`;
+        }
+      }
       const testScoreBtn = document.getElementById('testScoreBtn');
       if (testScoreBtn) testScoreBtn.textContent = i18n.testScore[currentLang];
       // 商店
@@ -477,10 +483,10 @@
 
         function updateWalletBtnUI(addr) {
             if (addr) {
-                walletBtnText.textContent = addr.slice(0, 4) + "..." + addr.slice(-4) + " (点击断开)";
+                walletBtnText.textContent = addr.slice(0, 4) + "..." + addr.slice(-4) + (currentLang === 'zh' ? ' (点击断开)' : ' (Disconnect)');
                 isWalletConnected = true;
             } else {
-                walletBtnText.textContent = "连接钱包";
+                walletBtnText.textContent = i18n.connectWallet[currentLang];
                 isWalletConnected = false;
             }
         }
@@ -489,6 +495,8 @@
             const saved = localStorage.getItem('userWalletAddress');
             updateWalletBtnUI(saved);
             updateWalletScore();
+            // 重新渲染按钮，防止切换语言后按钮内容不对
+            renderTexts();
         }
         restoreWalletAddress();
 
@@ -520,6 +528,13 @@
             connectWalletBtn.addEventListener('click', () => {
                 console.log("点击了连接钱包按钮");
                 connectWallet();
+            });
+        }
+        // 切换语言时也刷新钱包按钮
+        const switchLangBtn = document.getElementById('switchLangBtn');
+        if (switchLangBtn) {
+            switchLangBtn.addEventListener('click', () => {
+                restoreWalletAddress();
             });
         }
 
