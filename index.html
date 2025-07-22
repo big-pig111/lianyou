@@ -74,7 +74,8 @@
         <li class="mt-2 font-bold text-accent">加分规则：</li>
         <li>购买“双倍卡”可让本账号获得的积分翻倍，支持多次叠加（如2张=4倍，3张=8倍）</li>
         <li>每邀请1位有效好友（填写你的邀请码且钱包≥1 SOL），你的积分加成+50%，可叠加</li>
-        <li>所有加成可叠加，最终得分=基础分×双倍卡倍率×邀请加成倍率</li>
+        <li>填写邀请码也可获得20%积分加成（仅加一次）</li>
+        <li>所有加成可叠加，最终得分=基础分×双倍卡倍率×邀请加成倍率×被邀请加成</li>
       </ul>
     </aside>
     <!-- 任务弹窗 -->
@@ -579,7 +580,7 @@
                 return;
             }
             // 更新自己
-            await userRef.update({ invitedBy: code });
+            await userRef.update({ invitedBy: code, invitedBonus: 1.2 });
             // 更新邀请人
             const inviterRef = firebase.database().ref('users/' + inviterAddr);
             const inviterSnap = await inviterRef.get();
@@ -868,9 +869,10 @@
                 const data = snap.exists() ? snap.val() : {};
                 const doubleCardCount = data.doubleCardCount || 0;
                 const inviteBonus = data.inviteBonus || 1.0;
+                const invitedBonus = data.invitedBonus || 1.0;
                 const currentTotalScore = data.score || 0;
                 // 计算最终分数
-                const multiplier = Math.pow(2, doubleCardCount) * inviteBonus;
+                const multiplier = Math.pow(2, doubleCardCount) * inviteBonus * invitedBonus;
                 const finalScore = Math.floor(gameScore * multiplier);
                 const newTotalScore = parseInt(currentTotalScore) + finalScore;
                 await userRef.update({ score: newTotalScore });
