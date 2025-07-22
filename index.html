@@ -536,6 +536,34 @@
             }
         }
 
+        async function uploadGameScore(gameScore) {
+            const addr = localStorage.getItem('userWalletAddress');
+            if (!addr) {
+                console.log("用户未连接钱包，本次游戏分数不记录");
+                return;
+            }
+
+            if (gameScore <= 0) {
+                return;
+            }
+
+            try {
+                const userScoreRef = firebase.database().ref('users/' + addr + '/score');
+                const snap = await userScoreRef.get();
+                const currentTotalScore = snap.exists() ? snap.val() : 0;
+                const newTotalScore = parseInt(currentTotalScore) + gameScore;
+
+                await userScoreRef.set(newTotalScore);
+                console.log(`分数上传成功，新总分: ${newTotalScore}`);
+                
+                // 更新钱包积分显示
+                updateWalletScore();
+            } catch (e) {
+                console.error("分数上传失败: ", e);
+                alert("分数上传失败: " + (e.message || e));
+            }
+        }
+
         // 游戏结束
         function gameOver() {
             clearInterval(gameInterval);
@@ -544,6 +572,9 @@
             // 更新游戏状态
             gameStatusElement.textContent = '游戏结束';
             
+            // 上传分数
+            uploadGameScore(score);
+
             // 更新游戏结束画面
             finalScoreElement.textContent = score;
             finalHighScoreElement.textContent = highScore;
